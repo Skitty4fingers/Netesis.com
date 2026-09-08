@@ -394,32 +394,28 @@ p { margin: 0; }
   padding-block: var(--sp-4);
 }
 
+/* The lockup is the real brand artwork, cropped to the wordmark from the
+   master logo. Two files rather than one, because the artwork is white and
+   silver and would disappear on the light theme; the ink variant keeps the
+   blue chevron and turns the metal to charcoal. They are background images,
+   so a browser only ever fetches the one its theme asks for. The link's
+   accessible name comes from visually hidden text next to it. */
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: .6rem;
-  color: var(--c-text);
   text-decoration: none;
-  /* echoes the logo lockup: wide, uppercase, evenly tracked */
-  font-weight: 700;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: .1em;
   line-height: 1;
 }
-.wordmark:hover { color: var(--c-text); }
-/* The chevron is the brand's "terminal cursor" mark, lifted from the logo
-   lockup. It glows on the dark canvas the way the logo does; the light theme
-   gets a much quieter halo so it does not smear on a pale ground. */
-.wordmark__mark {
-  color: var(--c-accent);
-  flex: none;
-  filter: drop-shadow(0 0 5px var(--glow-intense)) drop-shadow(0 0 12px var(--glow-ambient));
+.wordmark__logo {
+  display: block;
+  width: 142px;
+  height: 26px;
+  background: url("../img/netesis-wordmark.png") left center / contain no-repeat;
 }
-:root[data-theme="light"] .wordmark__mark { filter: drop-shadow(0 0 4px var(--glow-ambient)); }
-.wordmark:hover .wordmark__mark { color: var(--c-accent-hover); }
-.wordmark--small { font-size: var(--t-base); }
-.wordmark--small .wordmark__mark { width: 18px; height: 18px; }
+:root[data-theme="light"] .wordmark__logo {
+  background-image: url("../img/netesis-wordmark-ink.png");
+}
+.wordmark--small .wordmark__logo { width: 120px; height: 22px; }
 
 .site-nav ul { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); list-style: none; margin: 0; padding: 0; } /* sp-4: all five links fit one row at 375px */
 .site-nav a {
@@ -1483,8 +1479,15 @@ select.input {
     --glow-ambient: transparent; --glow-intense: transparent;
     --shadow-1: none; --shadow-2: none;
   }
-  /* the logo mark is a glowing blue chevron on screen; on paper it is ink */
-  .wordmark__mark { filter: none; }
+  /* paper is white, so force the ink lockup and ask the browser to actually
+     paint it: background images are dropped from print by default */
+  /* same specificity as the light-theme rule, and later in the file, so no
+     !important is needed to win */
+  :root .wordmark__logo, :root[data-theme="light"] .wordmark__logo {
+    background-image: url("../img/netesis-wordmark-ink.png");
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   /* paper has no scroll, so drop the edge hints and let tables print in full */
   .table-wrap { background-image: none; overflow-x: visible; }
   .site-nav, .theme-toggle, .site-footer__nav, .skip-link, .cta-band { display: none; }

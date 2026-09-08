@@ -152,11 +152,20 @@ Two values were deliberately changed from the source page. The orb core is `.14`
 
 ## The logo
 
-`assets/img/netesis-logo.png` is the master lockup: the wordmark with the glowing chevron, over the `AI STRATEGY & INSIGHTS` tagline, on transparency. It is white and silver, so it is legible only on a dark ground.
+The header and footer show the real brand artwork, not a rebuild of it.
 
-The site header and footer do **not** use that file. They use a compact lockup built from an inline SVG chevron plus the word Netesis as live text, because it stays crisp at 22px, recolours itself for the light theme, is selectable and readable by a screen reader, and costs no request. The chevron path and its glow live in the `.wordmark__mark` rules in section 5 of the stylesheet.
+| File | What it is |
+|---|---|
+| `assets/img/netesis-logo.png` | The master lockup: wordmark, glowing chevron, and the `AI STRATEGY & INSIGHTS` tagline, on transparency. Kept as the source asset and named as `logo` in the home page's JSON-LD. |
+| `assets/img/netesis-wordmark.png` | The master lockup cropped to the wordmark and scaled to 600px wide. This is what the header and footer show on the dark theme. |
+| `assets/img/netesis-wordmark-ink.png` | The same crop with the metal turned to charcoal and the blue chevron left alone. Shown on the light theme. |
+| `assets/img/og-card.png` | 1200x630 social card: the master lockup over the brand canvas with a sapphire glow. Referenced as `og:image` and `twitter:image` by every page. |
 
-`assets/img/og-card.png` is the 1200×630 social card: the master lockup composed over the brand canvas with a sapphire glow. It is referenced as `og:image` and `twitter:image` on every page, and as `logo`/`image` in the home page's `Organization` JSON-LD. Regenerate it if the logo changes.
+The tagline is cropped out of the header lockup on purpose: at 26px tall it would be a grey smear. It survives in the master file and on the social card, where it is legible.
+
+There are two wordmark files rather than one because the artwork is white and silver and would vanish against the light theme. They are applied as `background-image` in the `.wordmark__logo` rule, which means a browser only ever downloads the file its current theme asks for, and the print rule swaps in the ink variant with `print-color-adjust: exact` so the logo survives onto paper. The link's accessible name comes from visually hidden text beside the image, so the mark is decorative to a screen reader and the link still announces as "Netesis".
+
+To regenerate the crops after a logo change, take the master file, cut the wordmark band, scale it to 600px wide, and for the ink variant map every non-blue pixel's luminance into a dark ramp while leaving the chevron untouched.
 
 ## Deployment to GitHub Pages
 
