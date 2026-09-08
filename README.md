@@ -125,14 +125,12 @@ Three values are duplicated outside the stylesheet because CSS variables cannot 
 
 ## Deployment to GitHub Pages
 
-The repository is initialised on `main` with no commits yet. Once, in order:
+The site is committed on `main`. Once, in order:
 
 1. Create an empty repository on GitHub (no README, licence or `.gitignore` – the repository already has what it needs). Note its owner and name; they appear below as `<github-username>` and `<repo>`.
-2. Commit and push `main`:
+2. Add the remote and push `main`:
 
    ```sh
-   git add -A
-   git commit -m "Netesis.com static site"
    git remote add origin git@github.com:<github-username>/<repo>.git
    git push -u origin main
    ```
