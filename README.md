@@ -225,7 +225,7 @@ grep -rn "TODO(content)" --include=*.html .
 What they are:
 
 - **Team bios** – names, roles, photos, LinkedIn links for the placeholder team card on `about.html`.
-- **Phone, office, social links** – the placeholder rows on `contact.html`, and `sameAs` profiles in the JSON-LD on `index.html`.
+- **Social profiles** – `sameAs` links in the JSON-LD on `index.html`. The contact page no longer lists office or social rows, and the phone number is live.
 - **Client references** – the "Looking for a reference?" callout on `about.html`; references must be supplied and approved before anything is named.
 - **Pricing decision** – whether to publish indicative ranges on `services.html`; today it says fixed prices are quoted after a scoping call, with no numbers.
 - **Form endpoint** – the contact form posts to `mailto:info@netesis.com`; replace the `action` with a real endpoint (a Formspree/Basin URL or your own) and delete the note saying the form opens the visitor's mail client.
