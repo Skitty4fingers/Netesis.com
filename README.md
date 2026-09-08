@@ -160,6 +160,7 @@ The header and footer show the real brand artwork, not a rebuild of it.
 | `assets/img/netesis-wordmark.png` | The master lockup cropped to the wordmark and scaled to 600px wide. This is what the header and footer show on the dark theme. |
 | `assets/img/netesis-wordmark-ink.png` | The same crop with the metal turned to charcoal and the blue chevron left alone. Shown on the light theme. |
 | `assets/img/og-card.png` | 1200x630 social card: the master lockup over the brand canvas with a sapphire glow. Referenced as `og:image` and `twitter:image` by every page. |
+| `assets/img/scott-damgaard.png` | Portrait for the team card on `about.html`, 192x192, shown at 72px in a circular clip. |
 
 The tagline is cropped out of the header lockup on purpose: at 26px tall it would be a grey smear. It survives in the master file and on the social card, where it is legible.
 
@@ -223,7 +224,7 @@ grep -rn "TODO(content)" --include=*.html .
 
 What they are:
 
-- **Team bio and photo** – the card on `about.html` names Scott Damgaard as CEO / CTO and links the LinkedIn profile. A prose bio and a photograph are still missing. Nothing on that card was read from LinkedIn, which blocks automated access (HTTP 999), so only the name, the role and the link are claimed.
+- **Team bio** – the card on `about.html` carries the name, role, photograph and LinkedIn link. A prose bio is still missing. Nothing written on that card came from LinkedIn, which blocks automated access (HTTP 999); every claim on it was supplied directly.
 - **Company social profiles** – `sameAs` on the `Organization` node in the JSON-LD on `index.html`, for profiles belonging to Netesis itself (a company LinkedIn page, a GitHub org). The personal profile already sits on the `Person` node, which is where it belongs.
 - **Client references** – the "Looking for a reference?" callout on `about.html`; references must be supplied and approved before anything is named.
 - **Pricing decision** – whether to publish indicative ranges on `services.html`; today it says fixed prices are quoted after a scoping call, with no numbers.
