@@ -457,13 +457,52 @@ p { margin: 0; }
 :root[data-theme="light"] .theme-toggle__icon--sun { display: none; }
 :root[data-theme="light"] .theme-toggle__icon--moon { display: block; }
 
-/* < 720: wordmark + toggle on row one, nav wraps onto row two */
-.theme-toggle { margin-left: auto; order: 2; }
+/* A quiet pointer to llms.txt, the machine-readable description of the site.
+   Set like a label rather than a nav item, so it reads as metadata. */
+.agents-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem .55rem;
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--radius-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.agents-link:hover { color: var(--c-text); border-color: var(--c-border); }
+.agents-link svg { width: 13px; height: 13px; flex: none; }
+
+/* < 720: wordmark + agents link + toggle on row one, nav wraps onto row two */
+.agents-link { order: 1; margin-left: auto; }
+.theme-toggle { margin-left: var(--sp-2); order: 2; }
 .site-nav { order: 3; flex-basis: 100%; }
 @media (min-width: 720px) {
   .site-nav { order: 0; flex-basis: auto; margin-left: auto; }
-  .theme-toggle { margin-left: 0; order: 0; }
+  .agents-link { order: 0; margin-left: var(--sp-5); }
+  .theme-toggle { margin-left: var(--sp-2); order: 0; }
   .site-nav ul { gap: var(--sp-1) var(--sp-6); }
+}
+/* The label is the first thing to go when the row gets tight. It is hidden the
+   visually-hidden way rather than with display:none, so the link keeps its
+   accessible name and never becomes a nameless icon. */
+@media (max-width: 430px) {
+  .agents-link__text {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  .agents-link { padding: .35rem .45rem; gap: 0; }
 }
 
 /* --------------------------------------------------------------------------

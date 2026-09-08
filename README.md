@@ -36,6 +36,7 @@ There are no includes and nothing is generated: the header and footer are repeat
 | `assets/js/calculator.test.html` | Dependency-free test page. Imports `./calculator.js` and prints a PASS/FAIL line per assertion. Not linked from the site, not in the sitemap. |
 | `CNAME` | `netesis.com` – the custom domain for GitHub Pages. |
 | `.nojekyll` | Empty. Tells Pages not to run Jekyll, so nothing gets filtered or rewritten. |
+| `llms.txt` | A complete, machine-readable description of the site for language models and agents: the proposition, every page, the calculator's inputs, formulas and worked example, and an explicit list of what the site does not claim. Markdown, served as plain text so it opens in a browser. Linked from the header of every page as "For agents". |
 | `robots.txt` | Allows all crawlers and points at the sitemap. |
 | `sitemap.xml` | The six indexable pages (not `404.html`, not the test page). Update `lastmod` when a page changes. |
 | `assets/img/netesis-logo.png` | The master brand lockup (1368x397, transparent). Not used by the pages; kept as the source asset and referenced by the JSON-LD. |
@@ -224,14 +225,21 @@ grep -rn "TODO(content)" --include=*.html .
 
 What they are:
 
-- **Team bio** – the card on `about.html` carries the name, role, photograph and LinkedIn link. A prose bio is still missing. Nothing written on that card came from LinkedIn, which blocks automated access (HTTP 999); every claim on it was supplied directly.
 - **Company social profiles** – `sameAs` on the `Organization` node in the JSON-LD on `index.html`, for profiles belonging to Netesis itself (a company LinkedIn page, a GitHub org). The personal profile already sits on the `Person` node, which is where it belongs.
-- **Client references** – the "Looking for a reference?" callout on `about.html`; references must be supplied and approved before anything is named.
 - **Pricing decision** – whether to publish indicative ranges on `services.html`; today it says fixed prices are quoted after a scoping call, with no numbers.
 - **Form endpoint** – the contact form posts to `mailto:info@netesis.com`; replace the `action` with a real endpoint (a Formspree/Basin URL or your own) and delete the note saying the form opens the visitor's mail client.
 - **Legal entity line** – registered company name and jurisdiction in the footer of every page, if required where Netesis is registered.
 
 Remove each comment as its content lands; the grep should eventually return nothing.
+
+## Keeping llms.txt honest
+
+`llms.txt` restates the site in one file, which means it can drift. When a page's
+claims change — an engagement's scope or duration, the calculator's formulas or
+its worked example, the contact details, or anything in the "what the site does
+not claim" list — update `llms.txt` in the same commit. Its worked example is the
+calculator's own default scenario, so if `EXAMPLE` in `assets/js/calculator.js`
+changes, the figures in that file have to change with it.
 
 ## No analytics
 

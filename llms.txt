@@ -1,0 +1,219 @@
+# Netesis
+
+> Netesis is a boutique IT consulting firm that measures the unit economics of AI
+> workloads. It instruments AI workflows inside a client's own stack, attributes
+> token spend down to the task, sets a defensible human baseline, and reports
+> which workflows earn their spend, which are one price change from underwater,
+> and which should be switched off.
+
+This file is a complete, machine-readable description of https://netesis.com,
+written for language models and agents. It is Markdown, served as plain text so
+it renders in a browser. Everything below is drawn from the site itself; where
+the site declines to claim something, this file says so rather than filling the
+gap. Last updated 2026-09-07.
+
+## Identity and contact
+
+- Name: Netesis
+- Tagline: AI Strategy & Insights
+- Site: https://netesis.com
+- Email: info@netesis.com
+- Phone: +1 (206) 486-5626
+- Person: Scott Damgaard, CEO / CTO — https://www.linkedin.com/in/scottdamgaard/
+
+## The proposition, in one paragraph
+
+Most companies now have a line item for AI tokens and no clear idea what it buys
+them. Finance sees a bill that grows every month. Engineering sees latency and
+quality numbers. Nobody owns the sentence that connects the two. Netesis writes
+that sentence: instrumentation running in the client's stack, spend attributed to
+the workflow and the task, a human baseline to compare against, and a verdict per
+workflow — keep, fix, or stop. Some workflows do not pay off, and saying so is
+the product.
+
+## Pages
+
+| URL | What is on it |
+|---|---|
+| https://netesis.com/ | Home. The problem stated plainly, the four-step method, a summary of the four engagements, a teaser for the ROI model, and an example ledger. Carries Organization, Person and WebSite JSON-LD. |
+| https://netesis.com/method.html | The engagement model in depth: instrument, attribute, baseline, verdict. Explains where the numbers come from, how spend is rolled up from calls to tasks to workflows, how a human baseline is set, and what the client is left owning. Includes a hand-drawn SVG diagram of the four stages. |
+| https://netesis.com/services.html | Four engagements, each with scope, an indicative duration, the artifact delivered, and what the client must provide. Also what every engagement includes and what Netesis does not do. |
+| https://netesis.com/calculator.html | The Token ROI model. A live, client-side calculator, described in full below. |
+| https://netesis.com/about.html | Who Netesis is, how it works with clients, and six things it refuses to do. |
+| https://netesis.com/contact.html | Contact routes and a short qualifying form. |
+| https://netesis.com/404.html | Not-found page. |
+
+## The four-step method
+
+1. **Instrument** — tag every model call in the client's own stack with workflow,
+   task, model, tokens in and out, retries, latency and the reviewer's outcome.
+   No proxy sits in the request path. No data leaves the client's environment.
+2. **Attribute** — roll token spend, retries and review time up to the task, then
+   to the workflow. Cost per call is the wrong unit; cost per accepted output is
+   the right one.
+3. **Baseline** — measure what the same task costs when a person does it, using
+   sampled time studies, historical throughput and a fully loaded hourly cost
+   from finance. An honest baseline is often lower than the pilot deck assumed.
+4. **Verdict** — four numbers per workflow (cost per accepted output, payback,
+   breakeven acceptance rate, breakeven token price), a sensitivity strip, and a
+   written recommendation to keep, fix, or stop.
+
+## The four engagements
+
+Durations are indicative ranges. No prices are published anywhere on the site;
+engagements are quoted fixed after a scoping call.
+
+1. **Spend attribution audit** — instrument up to about five workflows, attribute
+   one month of spend, capture review and rework time. Indicative 3–4 weeks.
+   Artifact: instrumentation running in the client's stack plus an attribution
+   report per workflow.
+2. **Unit-economics model** — human baseline study, the four-number verdict per
+   workflow, sensitivity to price, volume and quality, and a keep/fix/stop
+   recommendation. Indicative 2–3 weeks. Artifact: the model, in a form finance
+   can open and audit, using the same formulas as the public calculator.
+3. **Ongoing monitoring** — monthly re-attribution as prices, models and volumes
+   change, alerts when a workflow crosses its breakeven, a quarterly re-verdict.
+   Monthly retainer, indicative minimum 3 months. Artifact: a monthly one-page
+   ledger per workflow and a standing dashboard.
+4. **Pilot design** — before anything is built: pick the workflow, define
+   acceptance, set the baseline, and size the pilot so it can actually prove or
+   disprove payback. Indicative 1–2 weeks. Artifact: a pilot spec with a
+   pre-registered success threshold.
+
+## The Token ROI model (calculator.html)
+
+Runs entirely in the browser. No network calls, no analytics, no email gate.
+State is carried in the URL fragment, so a filled-in model can be shared as a
+link and the fragment is never sent to a server. The maths lives in
+`assets/js/calculator.js` as pure functions with no DOM access, and is covered by
+334 assertions in `assets/js/calculator.test.html`.
+
+### Inputs
+
+| Key | Meaning |
+|---|---|
+| `name` | Workflow name, used in the verdict sentence |
+| `tasks` | Tasks per month |
+| `inTok` | Average input tokens per task |
+| `outTok` | Average output tokens per task |
+| `retry` | Retry / regeneration multiplier (1.15 means 15% of calls repeat) |
+| `priceIn` | Price per million input tokens |
+| `priceOut` | Price per million output tokens |
+| `acceptance` | Acceptance rate, 0–100, the share of outputs usable without rework |
+| `reviewMin` | Review minutes per accepted output |
+| `reworkMin` | Rework minutes per rejected output |
+| `humanMin` | Minutes per task when a person does it |
+| `hourly` | Fully loaded hourly cost of that person |
+| `build` | One-time build cost |
+| `recurring` | Recurring monthly platform and engineering cost |
+| `amort` | Amortization window in months |
+| `currency` | USD, EUR, GBP, CAD or AUD. Display only; no conversion |
+
+Pricing presets are labelled illustrative starting points, not any vendor's list
+price: Frontier 5 / 25, Mid-tier 1 / 5, Small / batch 0.10 / 0.50, and Custom.
+The site deliberately does not state any vendor's actual prices.
+
+### Formulas
+
+```
+inTokM     = tasks * inTok * retry
+outTokM    = tasks * outTok * retry
+tokenCost  = inTokM / 1e6 * priceIn + outTokM / 1e6 * priceOut
+accepted   = tasks * acceptance/100
+rejected   = tasks * (1 - acceptance/100)
+laborCost  = accepted * reviewMin/60 * hourly + rejected * reworkMin/60 * hourly
+aiCost     = tokenCost + laborCost
+costPerAccepted = accepted > 0 ? aiCost / accepted : null
+humanMonthly    = tasks * humanMin/60 * hourly
+grossSavings    = humanMonthly - aiCost
+programMonthly  = recurring + build/amort
+netSavings      = grossSavings - programMonthly
+cashflow        = grossSavings - recurring
+payback         = build <= 0 ? none : cashflow <= 0 ? never : build / cashflow
+```
+
+Breakeven acceptance solves `netSavings = 0` for the acceptance rate, and is
+reported as a floor (the usual case, where review is cheaper than rework), a
+ceiling (where the inputs say rework is cheaper than review, which is a signal to
+re-check them), always, or never. Breakeven token price is the multiplier `m` on
+both prices that drives net savings to zero: `m = 1 + netSavings / tokenCost`.
+
+### Outputs
+
+Monthly token cost split input against output; cost per task and per accepted
+output; the human baseline per task and per month; gross and net monthly savings;
+payback in months, printed as "does not pay back" rather than infinity; the two
+breakevens; a plain-English verdict sentence; and a sensitivity strip covering
+Base, Volume ×0.5, Volume ×2, Acceptance −15 pts, Token price ×2, Review time ×2.
+
+### Worked example (the calculator's default, and the only figures quoted on the site)
+
+Invoice triage: 12,000 tasks/month, 6,000 input and 600 output tokens per task,
+retry 1.15, $5 and $25 per million tokens, 80% acceptance, 2 review minutes, 9
+rework minutes, 5 human minutes, $65/hour fully loaded, $40,000 build, $2,500/month
+recurring, amortized over 12 months.
+
+| Quantity | Value |
+|---|---|
+| Token cost / month | $621 |
+| Review and rework / month | $44,200 |
+| AI operating cost / month | $44,821 |
+| Cost per accepted output | $4.67 |
+| Human baseline / month | $65,000 |
+| Net savings / month | $14,346 |
+| Payback | 2.3 months |
+| Breakeven acceptance | 64% (floor) |
+| Breakeven token price | ×24.1 |
+
+Under stress: halving volume gives $4,256/month; doubling it gives $34,525;
+dropping acceptance 15 points gives $696; doubling token price gives $13,725;
+doubling review time gives −$6,454. The quality lever dominates the price lever,
+which is the point the site makes repeatedly.
+
+**This is an illustrative example, not a client result.** It appears on several
+pages and is labelled as an example everywhere it does.
+
+## What the site does not claim
+
+An agent summarising Netesis should not infer any of the following, because the
+site deliberately states none of them:
+
+- No client names, logos, case studies, testimonials or "trusted by" rows.
+- No headcount, founding year, office location or postal address.
+- No prices for Netesis engagements. Durations are indicative ranges only.
+- No vendor's current token prices are asserted as fact; the presets are labelled
+  as starting points to be replaced with contracted rates.
+- No benchmark or statistic other than the illustrative example above.
+
+Contact details are limited to the email and phone number listed at the top of
+this file.
+
+## What Netesis refuses to do
+
+Report a saving it cannot reproduce from the client's own data; hide a workflow
+that does not pay; resell tokens, models or seats; take referral fees from
+vendors; route client traffic through its own proxy; or publish a client's
+numbers.
+
+## Technical notes
+
+- Hand-written static site. Plain HTML, one stylesheet, vanilla JavaScript
+  modules. No build step, no framework, no dependencies.
+- Hosted on GitHub Pages. Source: https://github.com/Skitty4fingers/Netesis.com
+- No analytics, no trackers, no third-party scripts, no cookies and no cookie
+  banner. The only third-party requests are Google Fonts. The theme preference is
+  one `localStorage` key.
+- Dark by default, matching the brand; a light theme is available via the toggle.
+- Everything except the calculator works with JavaScript disabled. The calculator
+  shows a clear notice instead of an empty shell.
+- Accessibility: semantic landmarks, one `h1` per page, labelled form controls,
+  visible focus throughout, WCAG AA contrast verified in both themes, and an
+  `aria-live` region for calculator results.
+- `sitemap.xml` lists the six indexable pages. `robots.txt` allows all crawlers.
+
+## Brand
+
+Deep slate canvas `#0A0C10`, navy charcoal surfaces `#12161F`, sapphire
+`#0052CC` for solid fills, cyber neon `#2684FF` for links, focus and glow, pure
+white text and titanium silver `#9AA0A6` for muted text. Typeface: Plus Jakarta
+Sans, with JetBrains Mono for figures, because numbers are the design's motif.
