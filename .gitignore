@@ -1,0 +1,7 @@
+# Local build notes — not part of the published site
+FABLE-PROMPT.md
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp

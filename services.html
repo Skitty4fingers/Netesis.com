@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Services — Netesis</title>
+  <meta name="description" content="Four fixed-scope engagements: a spend attribution audit, a unit-economics model, ongoing monitoring, and pilot design. Each ends with one artifact finance can audit.">
+  <link rel="canonical" href="https://netesis.com/services.html">
+  <meta name="theme-color" content="#f8f7f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f0f11" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Netesis">
+  <meta property="og:title" content="Services — Netesis">
+  <meta property="og:description" content="Spend attribution audit, unit-economics model, ongoing monitoring, and pilot design. Each engagement ends with one artifact: instrumentation in your stack, or a model finance can audit.">
+  <meta property="og:url" content="https://netesis.com/services.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Services — Netesis">
+  <meta name="twitter:description" content="Spend attribution audit, unit-economics model, ongoing monitoring, and pilot design. Each engagement ends with one artifact: instrumentation in your stack, or a model finance can audit.">
+  <!-- TODO(content): add og:image and twitter:image (1200×630 PNG) once a brand image exists -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='none' stroke='%231f4fd6' stroke-width='3'/%3E%3Cpath d='M8 24 L24 8 L24 24 Z' fill='%231f4fd6'/%3E%3C/svg%3E">
+  <script>(function(){try{var t=localStorage.getItem('netesis-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+  <script type="module" src="./assets/js/site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="wordmark" href="./index.html">
+        <svg class="wordmark__mark" width="22" height="22" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 24 L24 8 L24 24 Z" fill="currentColor"/></svg>
+        <span class="wordmark__text">Netesis</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="./method.html">Method</a></li>
+          <li><a href="./services.html" aria-current="page">Services</a></li>
+          <li><a href="./calculator.html">Calculator</a></li>
+          <li><a href="./about.html">About</a></li>
+          <li><a href="./contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <button class="theme-toggle" type="button" hidden aria-label="Switch to dark theme" data-theme-toggle>
+        <svg class="theme-toggle__icon theme-toggle__icon--sun" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="theme-toggle__icon theme-toggle__icon--moon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- 1. Page head + the four engagements -->
+    <div class="section">
+      <div class="container">
+        <div class="section__head">
+          <p class="eyebrow">Services</p>
+          <h1 id="page-title">Four engagements. One artifact each.</h1>
+          <p class="lede">Each engagement ends with one thing: instrumentation running in your stack, or a model finance can open and audit. No decks. Pick by where you are: before the build, after the first bill, or once the numbers need watching.</p>
+        </div>
+
+        <!-- 01 Audit -->
+        <section class="split services-engagement reveal" id="audit" aria-labelledby="audit-title">
+          <div class="split__label">
+            <p class="eyebrow"><span class="num services-engagement__num">01</span> · Audit</p>
+            <h2 class="services-engagement__title" id="audit-title">Spend attribution audit</h2>
+            <p class="services-engagement__when small muted">Start here if you have a token bill and no workflow names on it.</p>
+          </div>
+          <div class="split__body">
+            <div class="prose">
+              <p>We instrument up to five workflows in your stack, tagging every model call with workflow, task, and outcome. Then we attribute one month of token spend to those tasks, retries and regenerations included, and capture the minutes people spend reviewing and reworking what the model produced. The result is a cost per task and a cost per accepted output for each workflow, computed from your own logs.</p>
+            </div>
+            <dl class="dl dl--start services-engagement__facts">
+              <dt>Duration</dt>
+              <dd><span class="num">3–4</span> weeks<small>Indicative. Depends on how many workflows are in scope and how far the logs sit from the task.</small></dd>
+              <dt>Artifact</dt>
+              <dd>Attribution report per workflow<small>Cost per task, cost per accepted output, and retry share for each workflow. The instrumentation stays running in your stack.</small></dd>
+              <dt>You need to provide</dt>
+              <dd>Log and review-tool access<small>Read access to the LLM gateway or client-library logs, read access to the review tool, and one engineer who knows where the calls are made.</small></dd>
+              <dt>Not included</dt>
+              <dd>Prompt changes, model changes, or vendor negotiation.</dd>
+            </dl>
+            <p class="services-engagement__links">
+              <a class="link-arrow" href="./contact.html">Scope an audit<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </p>
+          </div>
+        </section>
+
+        <!-- 02 Model -->
+        <section class="split services-engagement reveal" id="model" aria-labelledby="model-title">
+          <div class="split__label">
+            <p class="eyebrow"><span class="num services-engagement__num">02</span> · Model</p>
+            <h2 class="services-engagement__title" id="model-title">Unit-economics model</h2>
+            <p class="services-engagement__when small muted">For a workflow whose spend is attributed and whose payback is still an argument.</p>
+          </div>
+          <div class="split__body">
+            <div class="prose">
+              <p>We set a human baseline for each workflow from sampled time studies, historical throughput, and the fully loaded hourly cost your finance team already uses. Against that baseline we produce the four numbers per workflow: cost per accepted output, payback, breakeven acceptance rate, and breakeven token price. Each comes with its sensitivity to price, volume, and quality, and a written recommendation to keep, fix, or stop.</p>
+              <p>Some workflows get “stop”. We write that down too.</p>
+            </div>
+            <dl class="dl dl--start services-engagement__facts">
+              <dt>Duration</dt>
+              <dd><span class="num">2–3</span> weeks<small>Indicative. Runs after the audit, or alongside it when the attribution already exists.</small></dd>
+              <dt>Artifact</dt>
+              <dd>The model, every formula visible<small>A spreadsheet-portable model finance can open and audit. The formulas are the same ones as the public <a href="./calculator.html">Token ROI model</a>, so anyone can check the arithmetic.</small></dd>
+              <dt>You need to provide</dt>
+              <dd>Attribution data and an hourly rate<small>The attributed spend from the audit or your own equivalent, access to the people doing the task today for a sampled time study, and the fully loaded hourly cost from finance.</small></dd>
+              <dt>Not included</dt>
+              <dd>Building or changing the workflow itself.</dd>
+            </dl>
+            <p class="services-engagement__links">
+              <a class="link-arrow" href="./contact.html">Scope a model<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+              <a class="link-arrow" href="./calculator.html">Run the same formulas now<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </p>
+          </div>
+        </section>
+
+        <!-- 03 Monitoring -->
+        <section class="split services-engagement reveal" id="monitoring" aria-labelledby="monitoring-title">
+          <div class="split__label">
+            <p class="eyebrow"><span class="num services-engagement__num">03</span> · Monitoring</p>
+            <h2 class="services-engagement__title" id="monitoring-title">Ongoing monitoring</h2>
+            <p class="services-engagement__when small muted">For workflows that have a verdict and a price list that keeps changing.</p>
+          </div>
+          <div class="split__body">
+            <div class="prose">
+              <p>Prices, models, and volumes change every month, and a verdict from March is not a verdict in September. We re-attribute spend monthly for every instrumented workflow, alert you when one crosses its breakeven acceptance rate or its breakeven token price, and reissue the keep, fix, or stop verdict each quarter. When a workflow stops paying, you find out from the ledger, not from the invoice.</p>
+            </div>
+            <dl class="dl dl--start services-engagement__facts">
+              <dt>Duration</dt>
+              <dd>Monthly · <span class="num">3</span>-month minimum<small>Indicative. A retainer; the first re-attribution runs the month after the audit or the model completes.</small></dd>
+              <dt>Artifact</dt>
+              <dd>Monthly one-page ledger per workflow<small>Plus a standing dashboard in your stack, built on the instrumentation from the audit. The alert thresholds are the breakevens from the model.</small></dd>
+              <dt>You need to provide</dt>
+              <dd>Standing access and rate changes<small>Continued read access to the gateway logs and the review tool, and someone in finance who tells us when a contracted rate changes.</small></dd>
+              <dt>Not included</dt>
+              <dd>Incident response or on-call for the workflows themselves.</dd>
+            </dl>
+            <p class="services-engagement__links">
+              <a class="link-arrow" href="./contact.html">Scope monitoring<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </p>
+          </div>
+        </section>
+
+        <!-- 04 Pilot design -->
+        <section class="split services-engagement reveal" id="pilot" aria-labelledby="pilot-title">
+          <div class="split__label">
+            <p class="eyebrow"><span class="num services-engagement__num">04</span> · Pilot design</p>
+            <h2 class="services-engagement__title" id="pilot-title">Pilot design</h2>
+            <p class="services-engagement__when small muted">For a workflow that does not exist yet and a budget that has to prove it.</p>
+          </div>
+          <div class="split__body">
+            <div class="prose">
+              <p>Before you build, we pick the workflow with the best odds, define what counts as an accepted output, set the human baseline, and size the pilot so it can actually prove or disprove payback. The success threshold is written down before the first call is made, so the result cannot be reinterpreted afterwards. Most pilots fail on review time, not on token price. This is where that gets designed out, or found early.</p>
+            </div>
+            <dl class="dl dl--start services-engagement__facts">
+              <dt>Duration</dt>
+              <dd><span class="num">1–2</span> weeks<small>Indicative. Runs before the build. Can be folded into an audit when one is already planned.</small></dd>
+              <dt>Artifact</dt>
+              <dd>Pilot spec with a pre-registered success threshold<small>The workflow, the acceptance definition, the baseline, the sample size, and the number the pilot has to beat. Run the candidate through the <a href="./calculator.html">calculator</a> first to see whether it is worth the two weeks.</small></dd>
+              <dt>You need to provide</dt>
+              <dd>A shortlist and the people doing the task<small>Candidate workflows, access to the people doing the task today, and the rates you expect to pay for tokens.</small></dd>
+              <dt>Not included</dt>
+              <dd>Running the pilot or building the workflow.</dd>
+            </dl>
+            <p class="services-engagement__links">
+              <a class="link-arrow" href="./contact.html">Scope a pilot<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+              <a class="link-arrow" href="./calculator.html">Size it in the calculator first<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- 2. Terms: what every engagement includes, what we do not do, pricing -->
+    <section class="section section--hairline reveal" id="terms" aria-labelledby="terms-title">
+      <div class="container">
+        <div class="section__head">
+          <p class="eyebrow">Terms</p>
+          <h2 id="terms-title">The same terms, every engagement.</h2>
+          <p class="lede">These do not change with the size of the engagement. They are what makes the number reproducible.</p>
+        </div>
+
+        <div class="split">
+          <div class="split__label">
+            <p class="eyebrow">Included</p>
+            <h3 id="includes-title">What every engagement includes</h3>
+          </div>
+          <div class="split__body prose">
+            <ul aria-labelledby="includes-title">
+              <li><strong>No proxy in your request path.</strong> We tag calls inside your code and read your logs. Nothing sits between you and the model.</li>
+              <li><strong>Your data stays in your stack.</strong> Logs, prompts, and outputs stay in your warehouse under your access controls. We leave with a report, not a dataset.</li>
+              <li><strong>Formulas you can audit.</strong> Every figure in the report traces to a formula on the sheet and a query against your logs. Finance can rerun both.</li>
+              <li><strong>A written verdict, including “stop”.</strong> Each workflow gets keep, fix, or stop, in writing, with the numbers that led there.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="split__label">
+            <p class="eyebrow">Excluded</p>
+            <h3 id="refuse-title">What we do not do</h3>
+          </div>
+          <div class="split__body prose">
+            <ul aria-labelledby="refuse-title">
+              <li><strong>Resell tokens, models, or seats.</strong> We have no margin on your spend and no reason to want it higher.</li>
+              <li><strong>Take vendor referral fees.</strong> If a cheaper model would change the verdict, we say so, and nobody pays us for the recommendation.</li>
+              <li><strong>Produce a number we cannot reproduce.</strong> If your logs cannot support a figure, the report says the figure is missing. It does not guess.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="split__label">
+            <p class="eyebrow">Pricing</p>
+            <h3 id="pricing-title">Fixed price per engagement</h3>
+          </div>
+          <div class="split__body">
+            <!-- TODO(content): confirm whether to publish indicative ranges -->
+            <div class="callout callout--info" role="note" aria-labelledby="pricing-title">
+              <p>We quote a fixed price per engagement after a <span class="num">30</span>-minute scoping call. The quote names the workflows in scope, the artifact, and the delivery date, and it does not change once the work starts.</p>
+              <p>If the scoping call shows that an engagement is not warranted yet, the same note says so. <a href="./contact.html">Book the scoping call</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CTA band -->
+    <section class="cta-band" aria-labelledby="cta-title">
+      <div class="container cta-band__inner">
+        <div>
+          <h2 id="cta-title">Not sure which engagement you need?</h2>
+          <p>Send us one workflow and last month's token bill. The scoping note names the engagement that fits, or says that none of them is warranted yet.</p>
+        </div>
+        <div class="cta-band__actions">
+          <a class="btn btn--primary" href="./contact.html">Get in touch</a>
+          <a class="btn btn--secondary" href="./calculator.html">Run the model</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="wordmark wordmark--small" href="./index.html">
+          <svg class="wordmark__mark" width="18" height="18" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 24 L24 8 L24 24 Z" fill="currentColor"/></svg>
+          <span class="wordmark__text">Netesis</span>
+        </a>
+        <p class="site-footer__tagline">Unit economics for AI workloads.</p>
+      </div>
+      <nav class="site-footer__nav" aria-label="Footer">
+        <ul>
+          <li><a href="./method.html">Method</a></li>
+          <li><a href="./services.html">Services</a></li>
+          <li><a href="./calculator.html">Calculator</a></li>
+          <li><a href="./about.html">About</a></li>
+          <li><a href="./contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="site-footer__meta">
+        <a href="mailto:hello@netesis.com">hello@netesis.com</a>
+        <span class="site-footer__sep" aria-hidden="true">·</span>
+        <span>© <span class="num">2026</span> Netesis</span>
+        <!-- TODO(content): add registered company name / jurisdiction line if required -->
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Token ROI model — Netesis</title>
+  <meta name="description" content="Run one AI workflow through the model: cost per accepted output, payback, breakeven acceptance rate, and breakeven token price. Nothing leaves this page.">
+  <link rel="canonical" href="https://netesis.com/calculator.html">
+  <meta name="theme-color" content="#f8f7f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f0f11" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Netesis">
+  <meta property="og:title" content="Token ROI model — Netesis">
+  <meta property="og:description" content="Enter one workflow and see its cost per accepted output, payback, and the two breakevens that decide whether it survives a price change or a quality dip.">
+  <meta property="og:url" content="https://netesis.com/calculator.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Token ROI model — Netesis">
+  <meta name="twitter:description" content="Enter one workflow and see its cost per accepted output, payback, and the two breakevens that decide whether it survives a price change or a quality dip.">
+  <!-- TODO(content): add og:image and twitter:image (1200×630 PNG) once a brand image exists -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='none' stroke='%231f4fd6' stroke-width='3'/%3E%3Cpath d='M8 24 L24 8 L24 24 Z' fill='%231f4fd6'/%3E%3C/svg%3E">
+  <script>(function(){try{var t=localStorage.getItem('netesis-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+  <script type="module" src="./assets/js/site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="wordmark" href="./index.html">
+        <svg class="wordmark__mark" width="22" height="22" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 24 L24 8 L24 24 Z" fill="currentColor"/></svg>
+        <span class="wordmark__text">Netesis</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="./method.html">Method</a></li>
+          <li><a href="./services.html">Services</a></li>
+          <li><a href="./calculator.html" aria-current="page">Calculator</a></li>
+          <li><a href="./about.html">About</a></li>
+          <li><a href="./contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <button class="theme-toggle" type="button" hidden aria-label="Switch to dark theme" data-theme-toggle>
+        <svg class="theme-toggle__icon theme-toggle__icon--sun" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="theme-toggle__icon theme-toggle__icon--moon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- 1. Page head + the model -->
+    <div class="section">
+      <div class="container">
+        <div class="section__head">
+          <p class="eyebrow">Token ROI model</p>
+          <h1 id="page-title">Token ROI model.</h1>
+          <p class="lede">Enter one workflow. See its cost per accepted output, payback, and the two breakevens that decide whether it survives a price change or a quality dip. Nothing leaves this page.</p>
+        </div>
+
+        <div class="callout callout--info">
+          <p class="small">Presets are illustrative starting points, not any vendor's list price. Replace them with your contracted rates.</p>
+        </div>
+
+        <noscript><div class="notice" role="alert"><strong>The model needs JavaScript.</strong> Turn it on to use the calculator, or work from the formulas below — nothing is hidden.</div></noscript>
+        <div id="calc-fallback" class="notice" role="alert" hidden>
+          <strong>The model didn't start.</strong> If you opened this file directly from disk, Chrome, Edge and Safari block JavaScript modules over <code>file://</code>. Serve the folder over HTTP (<code>python -m http.server</code>) or use <a href="https://netesis.com/calculator.html">netesis.com/calculator.html</a>. The formulas are listed below, so you can still run it by hand.
+        </div>
+
+        <div class="calc mt-8">
+          <!-- ------------------------------------------------------- inputs -->
+          <form class="calc__form" novalidate aria-labelledby="page-title">
+            <fieldset class="fieldset">
+              <legend>Workload</legend>
+              <div class="form-grid">
+                <div class="field field--wide">
+                  <label class="field__label" for="name">Workflow name</label>
+                  <input class="input" type="text" id="name" name="name" value="Invoice triage" maxlength="80" autocomplete="off" spellcheck="false" aria-describedby="name-help">
+                  <p class="field__help" id="name-help">Used in the verdict sentence.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="tasks">Tasks per month</label>
+                  <input class="input" type="number" id="tasks" name="tasks" min="0" step="1" value="12000" inputmode="decimal" aria-describedby="tasks-help">
+                  <p class="field__help" id="tasks-help">Units of work the workflow handles per month.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="retry">Retry / regeneration multiplier</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="retry" name="retry" min="0" step="0.01" value="1.15" inputmode="decimal" aria-describedby="retry-help">
+                    <span class="input__suffix" aria-hidden="true">×</span>
+                  </div>
+                  <p class="field__help" id="retry-help"><span class="num">1.15</span> means <span class="num">15%</span> of calls are repeated. Measure it; do not guess.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="inTok">Average input tokens per task</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="inTok" name="inTok" min="0" step="100" value="6000" inputmode="decimal" aria-describedby="inTok-help">
+                    <span class="input__suffix" aria-hidden="true">tokens</span>
+                  </div>
+                  <p class="field__help" id="inTok-help">Prompt, context, retrieved documents — everything sent to the model.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="outTok">Average output tokens per task</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="outTok" name="outTok" min="0" step="100" value="600" inputmode="decimal" aria-describedby="outTok-help">
+                    <span class="input__suffix" aria-hidden="true">tokens</span>
+                  </div>
+                  <p class="field__help" id="outTok-help">What the model writes back.</p>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend>Model pricing</legend>
+              <div class="form-grid">
+                <div class="field field--wide">
+                  <label class="field__label" for="preset">Pricing preset</label>
+                  <select class="input" id="preset" name="preset" aria-describedby="preset-help">
+                    <option value="frontier" selected>Frontier</option>
+                    <option value="mid">Mid-tier</option>
+                    <option value="small">Small / batch</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                  <p class="field__help" id="preset-help">Starting points only. Replace with your contracted rates. Editing either price switches this to Custom.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="priceIn">Price per million input tokens</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="priceIn" name="priceIn" min="0" step="0.01" value="5" inputmode="decimal" aria-describedby="priceIn-help">
+                    <span class="input__suffix" aria-hidden="true">/M tokens</span>
+                  </div>
+                  <p class="field__help" id="priceIn-help">Your contracted rate for input tokens, in the currency below.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="priceOut">Price per million output tokens</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="priceOut" name="priceOut" min="0" step="0.01" value="25" inputmode="decimal" aria-describedby="priceOut-help">
+                    <span class="input__suffix" aria-hidden="true">/M tokens</span>
+                  </div>
+                  <p class="field__help" id="priceOut-help">Your contracted rate for output tokens, in the currency below.</p>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend>Quality reality</legend>
+              <div class="form-grid">
+                <div class="field field--wide">
+                  <label class="field__label" for="acceptance">Acceptance rate</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="acceptance" name="acceptance" min="0" max="100" step="1" value="80" inputmode="decimal" aria-describedby="acceptance-help">
+                    <span class="input__suffix" aria-hidden="true">%</span>
+                  </div>
+                  <p class="field__help" id="acceptance-help">Share of outputs usable without rework.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="reviewMin">Review minutes per accepted output</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="reviewMin" name="reviewMin" min="0" step="0.5" value="2" inputmode="decimal" aria-describedby="reviewMin-help">
+                    <span class="input__suffix" aria-hidden="true">min</span>
+                  </div>
+                  <p class="field__help" id="reviewMin-help">Time a person spends checking an output they keep.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="reworkMin">Rework minutes per rejected output</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="reworkMin" name="reworkMin" min="0" step="0.5" value="9" inputmode="decimal" aria-describedby="reworkMin-help">
+                    <span class="input__suffix" aria-hidden="true">min</span>
+                  </div>
+                  <p class="field__help" id="reworkMin-help">Time to fix or redo an output that fails review.</p>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend>Human baseline</legend>
+              <div class="form-grid">
+                <div class="field">
+                  <label class="field__label" for="humanMin">Minutes per task done by a person</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="humanMin" name="humanMin" min="0" step="0.5" value="5" inputmode="decimal" aria-describedby="humanMin-help">
+                    <span class="input__suffix" aria-hidden="true">min</span>
+                  </div>
+                  <p class="field__help" id="humanMin-help">The baseline: how long the task takes without the model.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="hourly">Fully loaded hourly cost</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="hourly" name="hourly" min="0" step="1" value="65" inputmode="decimal" aria-describedby="hourly-help">
+                    <span class="input__suffix" aria-hidden="true">/hour</span>
+                  </div>
+                  <p class="field__help" id="hourly-help">Salary, benefits, overhead, tooling — per hour.</p>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend>Program costs</legend>
+              <div class="form-grid">
+                <div class="field">
+                  <label class="field__label" for="build">One-time build cost</label>
+                  <input class="input" type="number" id="build" name="build" min="0" step="1000" value="40000" inputmode="decimal" aria-describedby="build-help">
+                  <p class="field__help" id="build-help">Engineering to ship the workflow.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="recurring">Recurring monthly platform / engineering cost</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="recurring" name="recurring" min="0" step="100" value="2500" inputmode="decimal" aria-describedby="recurring-help">
+                    <span class="input__suffix" aria-hidden="true">/month</span>
+                  </div>
+                  <p class="field__help" id="recurring-help">Hosting, monitoring, the people who keep it alive.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="amort">Amortization window</label>
+                  <div class="input--suffix">
+                    <input class="input" type="number" id="amort" name="amort" min="1" step="1" value="12" inputmode="decimal" aria-describedby="amort-help">
+                    <span class="input__suffix" aria-hidden="true">months</span>
+                  </div>
+                  <p class="field__help" id="amort-help">Months over which the build cost is spread.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="currency">Currency</label>
+                  <select class="input" id="currency" name="currency" aria-describedby="currency-help">
+                    <option value="USD" selected>USD — US dollar</option>
+                    <option value="EUR">EUR — Euro</option>
+                    <option value="GBP">GBP — British pound</option>
+                    <option value="CAD">CAD — Canadian dollar</option>
+                    <option value="AUD">AUD — Australian dollar</option>
+                  </select>
+                  <p class="field__help" id="currency-help">Display only; no conversion.</p>
+                </div>
+              </div>
+            </fieldset>
+          </form>
+
+          <!-- ------------------------------------------------------ results -->
+          <div class="calc__results">
+            <section class="results" aria-labelledby="results-title">
+              <h2 class="eyebrow" id="results-title">Results · <span data-out="name">Invoice triage</span></h2>
+
+              <div class="results__hero">
+                <span class="results__hero-label" id="hero-label">Net savings per month</span>
+                <span class="results__hero-value calc-hero__value num is-pos" data-out="netSavingsSigned" data-animate>+$14,346</span>
+              </div>
+
+              <p class="results__verdict" data-out="verdict">At 12,000 tasks/month and an 80% acceptance rate, Invoice triage saves $14,346/month net and pays back the build in 2.3 months. It stops paying for itself below a 64% acceptance rate.</p>
+              <p class="hidden-visually" id="results-live" role="status" aria-live="polite" aria-atomic="true"></p>
+
+              <div class="results__group">
+                <p class="eyebrow">Token spend · per month</p>
+                <dl class="dl calc-dl">
+                  <dt>Input tokens</dt>
+                  <dd><span class="num" data-out="inTokM" data-out-title="inTokMFull" data-animate title="82,800,000">82.8M</span></dd>
+                  <dt>Output tokens</dt>
+                  <dd><span class="num" data-out="outTokM" data-out-title="outTokMFull" data-animate title="8,280,000">8.28M</span></dd>
+                  <dt>Input cost</dt>
+                  <dd><span class="num" data-out="inputCost" data-animate>$414</span></dd>
+                  <dt>Output cost</dt>
+                  <dd><span class="num" data-out="outputCost" data-animate>$207</span></dd>
+                  <dt>Token cost</dt>
+                  <dd><span class="num" data-out="tokenCost" data-animate>$621</span></dd>
+                </dl>
+              </div>
+
+              <div class="results__group">
+                <p class="eyebrow">Per task</p>
+                <dl class="dl calc-dl">
+                  <dt>Token cost per task</dt>
+                  <dd><span class="num" data-out="tokenCostPerTask" data-animate>$0.052</span></dd>
+                  <dt>Effective cost per task<span class="dl__note">Tokens plus review and rework, over every task.</span></dt>
+                  <dd><span class="num" data-out="effectiveCostPerTask" data-animate>$3.74</span></dd>
+                  <dt>Cost per accepted output<span class="dl__note">The same cost over the <span class="num" data-out="accepted">9,600</span> outputs you keep.</span></dt>
+                  <dd><span class="num" data-out="costPerAccepted" data-animate>$4.67</span></dd>
+                </dl>
+              </div>
+
+              <div class="results__group">
+                <p class="eyebrow">Baseline</p>
+                <dl class="dl calc-dl">
+                  <dt>Human cost per task</dt>
+                  <dd><span class="num" data-out="humanPerTask" data-animate>$5.42</span></dd>
+                  <dt>Human baseline / month</dt>
+                  <dd><span class="num" data-out="humanMonthly" data-animate>$65,000</span></dd>
+                </dl>
+              </div>
+
+              <div class="results__group">
+                <p class="eyebrow">Savings · per month</p>
+                <dl class="dl calc-dl">
+                  <dt>AI operating cost<span class="dl__note">Tokens <span class="num" data-out="tokenCost">$621</span> plus review and rework <span class="num" data-out="laborCost">$44,200</span>.</span></dt>
+                  <dd><span class="num" data-out="aiCost" data-animate>$44,821</span></dd>
+                  <dt>Gross savings</dt>
+                  <dd><span class="num" data-out="grossSavings" data-animate>$20,179</span></dd>
+                  <dt>Program cost<span class="dl__note">Recurring cost plus the build spread over the amortization window.</span></dt>
+                  <dd><span class="num" data-out="programMonthly" data-animate>$5,833</span></dd>
+                  <dt>Net savings</dt>
+                  <dd><span class="num" data-out="netSavings" data-animate>$14,346</span></dd>
+                </dl>
+              </div>
+
+              <div class="results__group">
+                <p class="eyebrow">Breakevens</p>
+                <dl class="dl calc-dl">
+                  <dt>Payback<span class="dl__note" data-out="paybackNote">Build of $40,000 repaid by $17,679/month of cash flow after recurring costs.</span></dt>
+                  <dd><span class="num" data-out="payback" data-animate>2.3 months</span></dd>
+                  <dt>Breakeven acceptance<span class="dl__note" data-out="breakevenAcceptanceNote">Below this acceptance rate the workflow loses money.</span></dt>
+                  <dd><span class="num" data-out="breakevenAcceptance" data-animate>64%</span> <span class="pill" data-out="breakevenAcceptanceLabel">Floor</span></dd>
+                  <dt>Breakeven token price<span class="dl__note" data-out="breakevenTokenPriceNote">Both prices would have to rise ×24.1, to $120.50 in and $602.52 out per million tokens, before the margin disappears.</span></dt>
+                  <dd><span class="num" data-out="breakevenTokenPrice" data-animate>×24.1</span></dd>
+                </dl>
+              </div>
+
+              <div class="table-wrap">
+                <table class="table sensitivity">
+                  <caption>Net monthly savings under stress</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Scenario</th>
+                      <th scope="col" class="num">Net / month</th>
+                      <th scope="col" class="num">vs base</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="is-base is-pos" data-sens-row="base">
+                      <th scope="row">Base</th>
+                      <td class="num is-pos" data-out="sens:base:net">$14,346</td>
+                      <td class="num" data-out="sens:base:delta">—</td>
+                    </tr>
+                    <tr class="is-pos" data-sens-row="volume-half">
+                      <th scope="row">Volume ×0.5</th>
+                      <td class="num is-pos" data-out="sens:volume-half:net">$4,256</td>
+                      <td class="num is-neg" data-out="sens:volume-half:delta">−$10,089</td>
+                    </tr>
+                    <tr class="is-pos" data-sens-row="volume-double">
+                      <th scope="row">Volume ×2</th>
+                      <td class="num is-pos" data-out="sens:volume-double:net">$34,525</td>
+                      <td class="num is-pos" data-out="sens:volume-double:delta">+$20,179</td>
+                    </tr>
+                    <tr class="is-pos" data-sens-row="acceptance-minus-15">
+                      <th scope="row">Acceptance −15 pts</th>
+                      <td class="num is-pos" data-out="sens:acceptance-minus-15:net">$696</td>
+                      <td class="num is-neg" data-out="sens:acceptance-minus-15:delta">−$13,650</td>
+                    </tr>
+                    <tr class="is-pos" data-sens-row="price-double">
+                      <th scope="row">Token price ×2</th>
+                      <td class="num is-pos" data-out="sens:price-double:net">$13,725</td>
+                      <td class="num is-neg" data-out="sens:price-double:delta">−$621</td>
+                    </tr>
+                    <tr class="is-neg" data-sens-row="review-double">
+                      <th scope="row">Review time ×2</th>
+                      <td class="num is-neg" data-out="sens:review-double:net">−$6,454</td>
+                      <td class="num is-neg" data-out="sens:review-double:delta">−$20,800</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="results__actions">
+                <button class="btn btn--secondary btn--small" type="button" id="calc-reset">Reset to example</button>
+                <button class="btn btn--primary btn--small" type="button" id="calc-copy">Copy summary</button>
+                <span class="status" id="calc-status" role="status" aria-live="polite" aria-atomic="true"></span>
+              </div>
+
+              <div class="calc-copyout" id="copy-fallback" hidden>
+                <p class="field__help" id="copy-fallback-help">The browser refused clipboard access. Select this text and copy it.</p>
+                <textarea class="input" id="copy-fallback-text" rows="8" readonly aria-label="Model summary" aria-describedby="copy-fallback-help"></textarea>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Formulas -->
+    <section class="section section--hairline" aria-labelledby="formulas-title">
+      <div class="container">
+        <div class="section__head">
+          <p class="eyebrow">Formulas</p>
+          <h2 id="formulas-title">Nothing hidden.</h2>
+          <p class="lede">Every number above comes from the lines below, in this order. Copy them into a spreadsheet and you will get the same answers.</p>
+        </div>
+
+        <details class="formulas">
+          <summary>
+            <svg class="formulas__chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 6l4.5 4.5L12.5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            How this is calculated
+            <span class="muted">All of it</span>
+          </summary>
+          <div class="prose formulas__body">
+            <dl>
+              <dt>Sanitize the inputs first</dt>
+              <dd><code class="formula">every number  = Number(field); not finite → 0 (amort → 1)
+negative      → 0
+acceptance    clamped to 0…100
+amort         = max(1, round(amort))
+name          trimmed, at most 80 characters
+currency      one of USD, EUR, GBP, CAD, AUD, else USD</code></dd>
+              <dd><p>Nothing downstream has to defend itself against a blank box, a minus sign, or the word “abc”. A quantity that cannot be defined — a cost per task with no tasks — is reported as an em dash, never as a number.</p></dd>
+
+              <dt>Monthly token volume and token cost</dt>
+              <dd><code class="formula">inTokM     = tasks × inTok × retry
+outTokM    = tasks × outTok × retry
+inputCost  = inTokM / 1e6 × priceIn
+outputCost = outTokM / 1e6 × priceOut
+tokenCost  = inputCost + outputCost</code></dd>
+              <dd><p>The retry multiplier applies to both directions, because a regenerated call re-sends the whole prompt as well as writing a new answer. Prices are per million tokens, so the volume is divided by a million before it is priced.</p></dd>
+
+              <dt>Quality reality: what review and rework cost</dt>
+              <dd><code class="formula">a          = acceptance / 100
+accepted   = tasks × a
+rejected   = tasks × (1 − a)
+reviewCost = accepted × reviewMin / 60 × hourly
+reworkCost = rejected × reworkMin / 60 × hourly
+laborCost  = reviewCost + reworkCost</code></dd>
+              <dd><p>Every accepted output still costs review minutes; every rejected one costs rework minutes. This is the term that decides most workflows, and it is the one pilot decks leave out.</p></dd>
+
+              <dt>Operating cost, and the three unit costs</dt>
+              <dd><code class="formula">aiCost               = tokenCost + laborCost
+tokenCostPerTask     = tasks &gt; 0 ? tokenCost / tasks : —
+effectiveCostPerTask = tasks &gt; 0 ? aiCost / tasks : —
+costPerAccepted      = accepted &gt; 0 ? aiCost / accepted : —</code></dd>
+              <dd><p>Cost per accepted output is the honest unit: you cannot ship the rejects, so they are overhead on the ones you keep.</p></dd>
+
+              <dt>The human baseline</dt>
+              <dd><code class="formula">humanPerTask = humanMin / 60 × hourly
+humanMonthly = tasks × humanPerTask</code></dd>
+              <dd><p>The same hourly cost prices the baseline and the review labour, so a change in the loaded rate moves both sides of the comparison together.</p></dd>
+
+              <dt>Gross savings, program cost, net savings, cash flow</dt>
+              <dd><code class="formula">grossSavings   = humanMonthly − aiCost
+buildMonthly   = build / amort
+programMonthly = recurring + buildMonthly
+netSavings     = grossSavings − programMonthly
+cashflow       = grossSavings − recurring</code></dd>
+              <dd><p>Net savings amortize the build; cash flow does not, because the build is already paid. Cash flow is what actually repays it.</p></dd>
+
+              <dt>Payback period</dt>
+              <dd><code class="formula">build ≤ 0     → no build cost to recover
+cashflow ≤ 0  → does not pay back
+otherwise     → months = build / cashflow</code></dd>
+              <dd><p>Printed in months, never as an infinity symbol. A workflow can show a payback figure and still lose money on net: that happens when <code>build / cashflow</code> is longer than the amortization window, and the verdict says so in words.</p></dd>
+
+              <dt>Breakeven acceptance rate</dt>
+              <dd><code class="formula">netSavings(a) = K − L × (reworkMin + a × (reviewMin − reworkMin))
+  K     = humanMonthly − tokenCost − programMonthly
+  L     = tasks × hourly / 60
+  slope = L × (reviewMin − reworkMin)
+
+slope = 0            → net ≥ 0 ? pays at any rate : never pays
+aStar = (K / L − reworkMin) / (reviewMin − reworkMin)
+
+reviewMin &lt; reworkMin (normal) → aStar is a FLOOR
+  aStar ≤ 0 → pays at any rate | aStar ≥ 1 → never pays
+reviewMin &gt; reworkMin (inverted) → aStar is a CEILING
+  aStar ≥ 1 → pays at any rate | aStar ≤ 0 → never pays</code></dd>
+              <dd><p>Net savings are linear in the acceptance rate, so there is exactly one root. When review is cheaper than rework — the normal case — more acceptance means more savings and the root is a floor to stay above. When review costs more than rework, the line runs the other way and the root is a ceiling; that is a sign the two time inputs deserve a second look.</p></dd>
+
+              <dt>Breakeven token price</dt>
+              <dd><code class="formula">netSavings(m) = netSavings − (m − 1) × tokenCost = 0
+m = 1 + netSavings / tokenCost
+
+tokenCost ≤ 0  → price cannot matter; nothing is spent on tokens
+m &gt; 1          → prices would have to RISE to m × today's
+0 &lt; m ≤ 1      → already losing; prices would have to FALL to m × today's
+m ≤ 0          → free tokens would still not make it pay
+
+impliedPriceIn = priceIn × m,  impliedPriceOut = priceOut × m</code></dd>
+              <dd><p>The multiplier moves both prices together. On most workflows it lands far above any plausible price change, which is the point: the quality lever dominates the price lever.</p></dd>
+
+              <dt>The six sensitivity scenarios</dt>
+              <dd><p>Each row re-runs the whole model on one modified copy of the inputs and reports net savings per month, plus the change against the base row.</p></dd>
+              <dd><code class="formula calc-formulas__scenarios">Base               inputs as entered
+Volume ×0.5        tasks × 0.5
+Volume ×2          tasks × 2
+Acceptance −15 pts acceptance − 15, floored at 0
+Token price ×2     priceIn × 2 and priceOut × 2
+Review time ×2     reviewMin × 2</code></dd>
+
+              <dt>How the numbers are printed</dt>
+              <dd><code class="formula">money   |v| &lt; 1 → 3 decimals; &lt; 100 → 2; otherwise 0
+        negatives take a true minus sign, never parentheses
+        anything that rounds to zero prints as a plain zero
+percent 0 decimals · months 1 decimal · multiplier ×24.1
+tokens  three significant figures with a unit: 82.8M
+missing an em dash — never NaN, Infinity, undefined or null</code></dd>
+              <dd><p>Formatting is <code>Intl.NumberFormat</code> in the en-US locale with the currency you selected. The currency is a display choice: nothing is converted.</p></dd>
+            </dl>
+          </div>
+        </details>
+
+        <div class="callout mt-8">
+          <span class="callout__title">What this model ignores</span>
+          <p>Latency, and what a slower workflow costs the people waiting on it. Provider reliability — outages, rate limits, and the fallback path you build for them. Prompt-caching and batch discounts, unless you fold them into the prices above. The cost of the review tool itself, and of the reviewers' context switching. Opportunity cost: what the same engineering month would have earned elsewhere.</p>
+          <p>It also assumes the acceptance rate you type is measured, not estimated. If it is a guess, the breakeven acceptance rate is the number to read first — it tells you how wrong the guess is allowed to be.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CTA band -->
+    <section class="cta-band" aria-labelledby="cta-title">
+      <div class="container cta-band__inner">
+        <div>
+          <h2 id="cta-title">Want these numbers from your real data?</h2>
+          <p>This page runs on what you typed. An engagement runs on your logs, your review tool, and a baseline we measure — and the verdict is written down, including when it says stop.</p>
+        </div>
+        <div class="cta-band__actions">
+          <a class="btn btn--primary" href="./contact.html">Get in touch</a>
+          <a class="btn btn--secondary" href="./method.html">How we work</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="wordmark wordmark--small" href="./index.html">
+          <svg class="wordmark__mark" width="18" height="18" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 24 L24 8 L24 24 Z" fill="currentColor"/></svg>
+          <span class="wordmark__text">Netesis</span>
+        </a>
+        <p class="site-footer__tagline">Unit economics for AI workloads.</p>
+      </div>
+      <nav class="site-footer__nav" aria-label="Footer">
+        <ul>
+          <li><a href="./method.html">Method</a></li>
+          <li><a href="./services.html">Services</a></li>
+          <li><a href="./calculator.html">Calculator</a></li>
+          <li><a href="./about.html">About</a></li>
+          <li><a href="./contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="site-footer__meta">
+        <a href="mailto:hello@netesis.com">hello@netesis.com</a>
+        <span class="site-footer__sep" aria-hidden="true">·</span>
+        <span>© <span class="num">2026</span> Netesis</span>
+        <!-- TODO(content): add registered company name / jurisdiction line if required -->
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="./assets/js/calculator-ui.js" onerror="document.getElementById('calc-fallback').hidden=false"></script>
+  <script>setTimeout(function(){if(!document.documentElement.dataset.calcReady){var f=document.getElementById('calc-fallback');if(f)f.hidden=false}},4000);</script>
+</body>
+</html>

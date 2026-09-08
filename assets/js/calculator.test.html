@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculator tests — Netesis</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='none' stroke='%231f4fd6' stroke-width='3'/%3E%3Cpath d='M8 24 L24 8 L24 24 Z' fill='%231f4fd6'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    /* Self-contained: the page must read fine even when ../css/styles.css is missing. */
+    .tests { max-width: 68rem; margin: 2rem auto; padding: 0 1rem; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }
+    .tests h1 { font-size: 1.5rem; margin: 0 0 .5rem; }
+    .tests p { margin: 0 0 1rem; max-width: 68ch; }
+    .tests code { font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace; font-size: .9em; }
+    .tests .notice { border: 1px solid #c9a24a; border-left-width: 4px; background: #fbefd2; color: #4a3600; padding: .75rem 1rem; border-radius: 6px; margin: 0 0 1rem; }
+    .tests .notice[hidden] { display: none; }
+    #out { font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid #d9d6ce; border-radius: 6px; padding: 1rem; background: #ffffff; color: #17171a; margin: 0; }
+    #out .pass { color: #17703f; }
+    #out .fail { color: #b8321a; font-weight: 700; }
+    #out .head { color: #66635d; }
+    #out .final { font-weight: 700; font-size: 1rem; }
+    @media (prefers-color-scheme: dark) {
+      .tests .notice { background: #34270a; color: #f1dfb0; border-color: #8a6a1e; }
+      #out { background: #17171a; color: #ededea; border-color: #2e2e34; }
+      #out .pass { color: #56c98a; }
+      #out .fail { color: #ff8a73; }
+      #out .head { color: #8f8d87; }
+    }
+  </style>
+</head>
+<body>
+  <main id="main" class="tests" tabindex="-1">
+    <h1>Token ROI model — tests</h1>
+    <p>Runs every assertion from the build contract against <code>./calculator.js</code>: the hand-checked example scenario, the edge cases (including subnormal inputs and emoji in the name), the formatters, the URL-hash codec, and a brute-force sweep that hunts for <code>NaN</code>, <code>Infinity</code>, <code>undefined</code>, <code>null</code> and <code>[object</code> in every display string and checks that neither breakeven says “never” beside a positive net figure. One line per assertion; the last line is the verdict.</p>
+
+    <noscript><div class="notice" role="alert"><strong>The tests need JavaScript.</strong> Turn it on to run them, or run the Node one-liner from the README — the module is pure and runs there unchanged.</div></noscript>
+    <div id="calc-fallback" class="notice" role="alert" hidden>
+      <strong>The tests didn't start.</strong> If you opened this file directly from disk, Chrome, Edge and Safari block JavaScript modules over <code>file://</code>. Open this page over HTTP (<code>python -m http.server</code> from the repo root, then <code>/assets/js/calculator.test.html</code>) or use <a href="https://netesis.com/assets/js/calculator.test.html">netesis.com/assets/js/calculator.test.html</a>. The module itself also runs under Node: see the README.
+    </div>
+
+    <pre id="out" aria-live="polite">Running…</pre>
+  </main>
+
+  <script type="module" onerror="document.getElementById('calc-fallback').hidden=false;document.getElementById('out').textContent='Tests did not run: the module failed to load.';document.title='Tests did not run — Netesis'">
+    import * as calc from './calculator.js';
+
+    document.documentElement.dataset.calcReady = '1';
+    const fallback = document.getElementById('calc-fallback');
+    if (fallback) fallback.hidden = true;
+
+    // ------------------------------------------------------------------ tiny harness
+    const out = document.getElementById('out');
+    out.textContent = '';
+    let passCount = 0;
+    let failCount = 0;
+
+    function line(text, cls) {
+      const span = document.createElement('span');
+      if (cls) span.className = cls;
+      span.textContent = text + '\n';
+      out.appendChild(span);
+    }
+    function head(text) { line('', ''); line('## ' + text, 'head'); }
+    function show(v) {
+      if (typeof v === 'string') return JSON.stringify(v);
+      if (v === undefined) return 'undefined';
+      try { const s = JSON.stringify(v); return s === undefined ? String(v) : s; } catch { return String(v); }
+    }
+    function check(label, ok, detail) {
+      if (ok) { passCount += 1; line('PASS  ' + label, 'pass'); }
+      else { failCount += 1; line('FAIL  ' + label + (detail ? ' — ' + detail : ''), 'fail'); }
+      return ok;
+    }
+    /** Relative comparison: |actual − expected| ≤ rel·|expected| (absolute 1e-9 when expected is 0). */
+    function approx(actual, expected, rel = 1e-6) {
+      if (typeof actual !== 'number' || typeof expected !== 'number' || !Number.isFinite(actual) || !Number.isFinite(expected)) return false;
+      if (actual === expected) return true;
+      if (expected === 0) return Math.abs(actual) <= 1e-9;
+      return Math.abs(actual - expected) <= rel * Math.abs(expected);
+    }
+    /** Strict equality for primitives (0 and −0 are equal); structural equality for arrays/objects. */
+    function eq(a, b) {
+      if (a === b || Object.is(a, b)) return true;
+      if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+      if (Array.isArray(a) !== Array.isArray(b)) return false;
+      const ka = Object.keys(a).sort();
+      const kb = Object.keys(b).sort();
+      if (ka.length !== kb.length || ka.some((k, idx) => k !== kb[idx])) return false;
+      return ka.every((k) => eq(a[k], b[k]));
+    }
+    const expectApprox = (label, actual, expected, rel) => check(label, approx(actual, expected, rel), `got ${show(actual)}, want ${show(expected)}`);
+    const expectEq = (label, actual, expected) => check(label, eq(actual, expected), `got ${show(actual)}, want ${show(expected)}`);
+    const expectIncludes = (label, haystack, needle) => check(label, typeof haystack === 'string' && haystack.includes(needle), `${show(haystack)} does not contain ${show(needle)}`);
+
+    const BAD = ['NaN', 'Infinity', 'undefined', 'null', '[object'];
+    function collectStrings(v, acc = []) {
+      if (typeof v === 'string') acc.push(v);
+      else if (Array.isArray(v)) v.forEach((x) => collectStrings(x, acc));
+      else if (v && typeof v === 'object') Object.values(v).forEach((x) => collectStrings(x, acc));
+      return acc;
+    }
+    /**
+     * Every string that formatResults(), summaryText() and verdict() produce for these inputs, scanned for
+     * the forbidden tokens — plus kind/net coherence: when the panel shows a positive hero figure
+     * (netTone "pos", i.e. net > 0 after the same zero-snap the display uses, so float noise at an exact
+     * breakeven is not counted), neither breakeven may say "never" beside it.
+     */
+    function offenders(inputs) {
+      const r = calc.compute(inputs);
+      const f = calc.formatResults(inputs, r);
+      const strings = collectStrings(f);
+      strings.push(calc.summaryText(inputs, r, 'https://netesis.com/calculator.html#' + calc.encodeState(inputs)));
+      strings.push(calc.verdict(inputs, r));
+      const bad = [];
+      for (const s of strings) for (const b of BAD) if (s.includes(b)) bad.push(`${b} in ${JSON.stringify(s.slice(0, 90))}`);
+      if (f.netTone === 'pos') {
+        if (r.breakevenAcceptance.kind === 'never') bad.push(`breakevenAcceptance "never" beside a positive net ${f.netSavingsSigned}`);
+        if (r.breakevenTokenPrice.kind === 'never') bad.push(`breakevenTokenPrice "never" beside a positive net ${f.netSavingsSigned}`);
+      }
+      return bad;
+    }
+
+    const E = calc.EXAMPLE;
+    const NUMERIC_KEYS = Object.keys(E).filter((k) => typeof E[k] === 'number');
+    const THIRD = 17500 / 3;   // programMonthly for the example: 2500 + 40000/12 = 5,833.333…
+    const DASH = '—';
+    const MINUS = '−';
+
+    try {
+      // ------------------------------------------------------------------ API surface
+      head('API surface (SPEC §7.4)');
+      for (const name of ['VERSION', 'EXAMPLE', 'PRESETS', 'CURRENCIES', 'SCENARIOS', 'fmt']) check(`exports ${name}`, name in calc && calc[name] !== undefined);
+      for (const name of ['sanitize', 'compute', 'sensitivity', 'verdict', 'formatResults', 'summaryText', 'encodeState', 'decodeState']) check(`exports function ${name}()`, typeof calc[name] === 'function');
+      expectEq('fmt has money, pct, int, months, mult, tokens', Object.keys(calc.fmt).sort(), ['int', 'money', 'months', 'mult', 'pct', 'tokens']);
+      expectEq('PRESETS keys', calc.PRESETS.map((p) => p.key), ['frontier', 'mid', 'small', 'custom']);
+      expectEq('PRESETS prices (frontier 5/25, mid 1/5, small 0.10/0.50)', calc.PRESETS.slice(0, 3).map((p) => [p.priceIn, p.priceOut]), [[5, 25], [1, 5], [0.1, 0.5]]);
+      expectEq('CURRENCIES codes', calc.CURRENCIES.map((c) => c.code), ['USD', 'EUR', 'GBP', 'CAD', 'AUD']);
+      expectEq('SCENARIOS keys', calc.SCENARIOS.map((s) => s.key), ['base', 'volume-half', 'volume-double', 'acceptance-minus-15', 'price-double', 'review-double']);
+      expectEq('EXAMPLE matches §7.3 inputs', { ...E }, { name: 'Invoice triage', tasks: 12000, inTok: 6000, outTok: 600, retry: 1.15, preset: 'frontier', priceIn: 5, priceOut: 25, acceptance: 80, reviewMin: 2, reworkMin: 9, humanMin: 5, hourly: 65, build: 40000, recurring: 2500, amort: 12, currency: 'USD' });
+
+      // ------------------------------------------------------------------ §7.3 example scenario
+      head('Example scenario (SPEC §7.3, relative 1e-6)');
+      const r = calc.compute(E);
+      expectApprox('inTokM = 82,800,000', r.inTokM, 82800000);
+      expectApprox('outTokM = 8,280,000', r.outTokM, 8280000);
+      expectApprox('inputCost = 414', r.inputCost, 414);
+      expectApprox('outputCost = 207', r.outputCost, 207);
+      expectApprox('tokenCost = 621', r.tokenCost, 621);
+      expectApprox('accepted = 9,600', r.accepted, 9600);
+      expectApprox('rejected = 2,400', r.rejected, 2400);
+      expectApprox('reviewCost = 20,800', r.reviewCost, 20800);
+      expectApprox('reworkCost = 23,400', r.reworkCost, 23400);
+      expectApprox('laborCost = 44,200', r.laborCost, 44200);
+      expectApprox('aiCost = 44,821', r.aiCost, 44821);
+      expectApprox('tokenCostPerTask = 0.05175', r.tokenCostPerTask, 0.05175);
+      expectApprox('effectiveCostPerTask = 3.735083333…', r.effectiveCostPerTask, 44821 / 12000);
+      expectApprox('costPerAccepted = 4.668854166…', r.costPerAccepted, 44821 / 9600);
+      expectApprox('humanPerTask = 5.416666…', r.humanPerTask, 65 / 12);
+      expectApprox('humanMonthly = 65,000', r.humanMonthly, 65000);
+      expectApprox('grossSavings = 20,179', r.grossSavings, 20179);
+      expectApprox('buildMonthly = 3,333.333…', r.buildMonthly, 40000 / 12);
+      expectApprox('programMonthly = 5,833.333…', r.programMonthly, THIRD);
+      expectApprox('netSavings = 14,345.666…', r.netSavings, 20179 - THIRD);
+      expectApprox('cashflow = 17,679', r.cashflow, 17679);
+      expectEq('payback.kind = "months"', r.payback.kind, 'months');
+      expectApprox('payback.months = 2.262571… (40000/17679)', r.payback.months, 40000 / 17679);
+      expectEq('payback.months rounds to 2.262571', Math.round(r.payback.months * 1e6) / 1e6, 2.262571);
+      expectEq('breakevenAcceptance.kind = "floor"', r.breakevenAcceptance.kind, 'floor');
+      const aStar = ((65000 - 621 - THIRD) * 60 / 780000 - 9) / (2 - 9);
+      expectApprox('breakevenAcceptance.value = 64.2355…%', r.breakevenAcceptance.value, aStar * 100);
+      expectEq('breakevenAcceptance.value rounds to 64.2355', Math.round(r.breakevenAcceptance.value * 1e4) / 1e4, 64.2355);
+      expectEq('breakevenTokenPrice.kind = "rise"', r.breakevenTokenPrice.kind, 'rise');
+      const m = 1 + (20179 - THIRD) / 621;
+      expectApprox('breakevenTokenPrice.multiplier = 24.10091…', r.breakevenTokenPrice.multiplier, m);
+      expectEq('breakevenTokenPrice.multiplier rounds to 24.10091', Math.round(r.breakevenTokenPrice.multiplier * 1e5) / 1e5, 24.10091);
+      expectApprox('breakevenTokenPrice.priceIn = 5 × m', r.breakevenTokenPrice.priceIn, 5 * m);
+      expectApprox('breakevenTokenPrice.priceOut = 25 × m', r.breakevenTokenPrice.priceOut, 25 * m);
+      expectEq('breakevenTokenPrice.priceIn rounds to 120.50', Math.round(r.breakevenTokenPrice.priceIn * 100) / 100, 120.5);
+      expectEq('breakevenTokenPrice.priceOut rounds to 602.52', Math.round(r.breakevenTokenPrice.priceOut * 100) / 100, 602.52);
+      expectEq('compute() carries the sanitized inputs', r.inputs.tasks === 12000 && r.inputs.currency === 'USD', true);
+
+      head('Sensitivity (SPEC §7.3)');
+      const s = calc.sensitivity(E);
+      const byKey = Object.fromEntries(s.map((x) => [x.key, x]));
+      expectEq('six rows in order', s.map((x) => x.key), ['base', 'volume-half', 'volume-double', 'acceptance-minus-15', 'price-double', 'review-double']);
+      expectEq('labels', s.map((x) => x.label), ['Base', 'Volume ×0.5', 'Volume ×2', 'Acceptance −15 pts', 'Token price ×2', 'Review time ×2']);
+      const sensExpected = [['base', 20179 - THIRD, 14345.67], ['volume-half', 10089.5 - THIRD, 4256.17], ['volume-double', 40358 - THIRD, 34524.67], ['acceptance-minus-15', 6529 - THIRD, 695.67], ['price-double', 19558 - THIRD, 13724.67], ['review-double', -621 - THIRD, -6454.33]];
+      for (const [key, exact, rounded] of sensExpected) {
+        expectApprox(`net ${key} = ${rounded}`, byKey[key].net, exact);
+        expectEq(`net ${key} rounds to ${rounded}`, Math.round(byKey[key].net * 100) / 100, rounded);
+      }
+      expectEq('base delta = 0', byKey.base.delta, 0);
+      expectApprox('volume ×0.5 delta = −10,089.5', byKey['volume-half'].delta, -10089.5);
+      expectApprox('review ×2 delta = −20,800', byKey['review-double'].delta, -20800);
+      expectEq('acceptance −15 lands on 65%', calc.compute(calc.SCENARIOS[3].apply(calc.sanitize(E))).inputs.acceptance, 65);
+      expectEq('acceptance −15 is clamped at 0', calc.compute(calc.SCENARIOS[3].apply(calc.sanitize({ ...E, acceptance: 10 }))).inputs.acceptance, 0);
+
+      head('Verdict and display strings (example)');
+      const V = 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage saves $14,346/month net and pays back the build in 2.3 months. It stops paying for itself below a 64% acceptance rate.';
+      expectEq('verdict(EXAMPLE) exact', calc.verdict(E, r), V);
+      expectEq('verdict(EXAMPLE) without results argument', calc.verdict(E), V);
+      const f = calc.formatResults(E, r);
+      expectEq('formatResults.verdict', f.verdict, V);
+      expectEq('inTokM "82.8M" / full "82,800,000"', [f.inTokM, f.inTokMFull], ['82.8M', '82,800,000']);
+      expectEq('outTokM "8.28M" / full "8,280,000"', [f.outTokM, f.outTokMFull], ['8.28M', '8,280,000']);
+      expectEq('totalTokM "91.1M"', f.totalTokM, '91.1M');
+      expectEq('inputCost/outputCost/tokenCost "$414" "$207" "$621"', [f.inputCost, f.outputCost, f.tokenCost], ['$414', '$207', '$621']);
+      expectEq('tokenCostPerTask "$0.052" (3 decimals below 1)', f.tokenCostPerTask, '$0.052');
+      expectEq('effectiveCostPerTask "$3.74" / costPerAccepted "$4.67"', [f.effectiveCostPerTask, f.costPerAccepted], ['$3.74', '$4.67']);
+      expectEq('humanPerTask "$5.42" / humanMonthly "$65,000"', [f.humanPerTask, f.humanMonthly], ['$5.42', '$65,000']);
+      expectEq('grossSavings "$20,179" / programMonthly "$5,833" / netSavings "$14,346"', [f.grossSavings, f.programMonthly, f.netSavings], ['$20,179', '$5,833', '$14,346']);
+      expectEq('netSavingsSigned "+$14,346", netTone "pos"', [f.netSavingsSigned, f.netTone], ['+$14,346', 'pos']);
+      expectEq('payback "2.3 months"', f.payback, '2.3 months');
+      expectEq('breakevenAcceptance "64%" (floor)', [f.breakevenAcceptance, f.breakevenAcceptanceKind], ['64%', 'floor']);
+      expectEq('breakevenTokenPrice "×24.1", implied "$120.50" / "$602.52"', [f.breakevenTokenPrice, f.breakevenPriceIn, f.breakevenPriceOut], ['×24.1', '$120.50', '$602.52']);
+      expectEq('sensitivity row strings', f.sensitivity.map((x) => [x.net, x.delta, x.tone]), [['$14,346', DASH, 'pos'], ['$4,256', MINUS + '$10,089', 'pos'], ['$34,525', '+$20,179', 'pos'], ['$696', MINUS + '$13,650', 'pos'], ['$13,725', MINUS + '$621', 'pos'], [MINUS + '$6,454', MINUS + '$20,800', 'neg']]);
+      check('formatResults values are strings (sensitivity is an array of string rows)', Object.entries(f).every(([k, v]) => k === 'sensitivity' ? Array.isArray(v) && v.every((row) => Object.values(row).every((x) => typeof x === 'string')) : typeof v === 'string'));
+      const summary = calc.summaryText(E, r, 'https://netesis.com/calculator.html#v=1');
+      expectIncludes('summaryText has the title', summary, 'Token ROI model — Invoice triage');
+      expectIncludes('summaryText has the URL', summary, 'https://netesis.com/calculator.html#v=1');
+      expectIncludes('summaryText has the verdict', summary, V);
+      expectIncludes('summaryText has the net line', summary, 'Net savings: +$14,346');
+      expectIncludes('summaryText has a sensitivity row', summary, 'Review time ×2');
+      check('summaryText is about 20+ lines', summary.split('\n').length >= 20, `${summary.split('\n').length} lines`);
+      expectIncludes('summaryText without url still works', calc.summaryText(E, r), 'Payback: 2.3 months');
+
+      // ------------------------------------------------------------------ required edge cases
+      head('tasks = 0');
+      const i0 = { ...E, tasks: 0 };
+      const r0 = calc.compute(i0);
+      expectEq('tokenCostPerTask is null', r0.tokenCostPerTask, null);
+      expectEq('effectiveCostPerTask is null', r0.effectiveCostPerTask, null);
+      expectEq('costPerAccepted is null', r0.costPerAccepted, null);
+      expectApprox('netSavings = −5,833.33', r0.netSavings, -THIRD);
+      expectEq('payback never', r0.payback.kind, 'never');
+      expectEq('verdict "nothing to measure"', calc.verdict(i0, r0), 'With no monthly volume there is nothing to measure. Invoice triage would cost $5,833/month in program costs.');
+      expectEq('verdict with blank name starts "This workflow"', calc.verdict({ ...i0, name: '' }), 'With no monthly volume there is nothing to measure. This workflow would cost $5,833/month in program costs.');
+      const f0 = calc.formatResults(i0, r0);
+      expectEq('per-task strings are "—"', [f0.tokenCostPerTask, f0.effectiveCostPerTask, f0.costPerAccepted], [DASH, DASH, DASH]);
+      expectEq('payback string "Does not pay back"', f0.payback, 'Does not pay back');
+      expectEq('breakeven token price "no-tokens" shows "—"', [f0.breakevenTokenPriceKind, f0.breakevenTokenPrice], ['no-tokens', DASH]);
+
+      head('acceptance = 0 and 100');
+      const rA0 = calc.compute({ ...E, acceptance: 0 });
+      expectEq('acceptance 0: accepted 0, costPerAccepted null', [rA0.accepted, rA0.costPerAccepted], [0, null]);
+      expectApprox('acceptance 0: rejected = 12,000', rA0.rejected, 12000);
+      expectEq('acceptance 0: reviewCost 0', rA0.reviewCost, 0);
+      expectApprox('acceptance 0: reworkCost = 117,000 (all rework)', rA0.reworkCost, 117000);
+      expectApprox('acceptance 0: netSavings = −58,454.33', rA0.netSavings, 65000 - 621 - 117000 - THIRD);
+      expectEq('acceptance 0: verdict', calc.verdict({ ...E, acceptance: 0 }, rA0), 'At 12,000 tasks/month and a 0% acceptance rate, Invoice triage loses $58,454/month net and does not pay back. It would need an acceptance rate above 64% to break even.');
+      const rA100 = calc.compute({ ...E, acceptance: 100 });
+      expectEq('acceptance 100: rejected 0, reworkCost 0', [rA100.rejected, rA100.reworkCost], [0, 0]);
+      expectApprox('acceptance 100: accepted = 12,000', rA100.accepted, 12000);
+      expectApprox('acceptance 100: reviewCost = 26,000', rA100.reviewCost, 26000);
+      expectApprox('acceptance 100: costPerAccepted = effectiveCostPerTask', rA100.costPerAccepted, rA100.effectiveCostPerTask);
+      expectApprox('acceptance 100: netSavings = 32,545.67', rA100.netSavings, 65000 - 621 - 26000 - THIRD);
+      expectEq('acceptance 100: verdict', calc.verdict({ ...E, acceptance: 100 }, rA100), 'At 12,000 tasks/month and a 100% acceptance rate, Invoice triage saves $32,546/month net and pays back the build in 1.1 months. It stops paying for itself below a 64% acceptance rate.');
+
+      head('Never pays back (humanMin 2)');
+      const iN = { ...E, humanMin: 2 };
+      const rN = calc.compute(iN);
+      expectApprox('netSavings = −24,654.33', rN.netSavings, 26000 - 44821 - THIRD);
+      expectApprox('cashflow = −21,321', rN.cashflow, -21321);
+      expectEq('payback never', rN.payback.kind, 'never');
+      expectEq('breakeven acceptance never', rN.breakevenAcceptance.kind, 'never');
+      expectEq('breakeven token price never (free tokens would not help)', rN.breakevenTokenPrice.kind, 'never');
+      expectEq('verdict', calc.verdict(iN, rN), 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage loses $24,654/month net and does not pay back. No acceptance rate makes it pay at these inputs.');
+      const fN = calc.formatResults(iN, rN);
+      expectEq('formatted payback / breakevens', [fN.payback, fN.breakevenAcceptance, fN.breakevenTokenPrice, fN.breakevenPriceIn, fN.netTone], ['Does not pay back', 'None', 'Never', DASH, 'neg']);
+
+      head('Breakeven token price "fall" (priceIn 200)');
+      const iF = { ...E, priceIn: 200 };
+      const rF = calc.compute(iF);
+      expectApprox('tokenCost = 16,767', rF.tokenCost, 16767);
+      expectApprox('netSavings = −1,800.33', rF.netSavings, 65000 - 16767 - 44200 - THIRD);
+      expectEq('kind fall', rF.breakevenTokenPrice.kind, 'fall');
+      expectApprox('multiplier = 1 + net/tokenCost', rF.breakevenTokenPrice.multiplier, 1 + rF.netSavings / rF.tokenCost);
+      check('0 < multiplier ≤ 1', rF.breakevenTokenPrice.multiplier > 0 && rF.breakevenTokenPrice.multiplier <= 1);
+      expectApprox('implied priceIn = 200 × m', rF.breakevenTokenPrice.priceIn, 200 * rF.breakevenTokenPrice.multiplier);
+      expectEq('payback is still months (positive cash flow, longer than amortization)', rF.payback.kind, 'months');
+      check('payback months > amort', rF.payback.months > 12, show(rF.payback.months));
+      expectEq('verdict qualifies the payback', calc.verdict(iF, rF), 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage loses $1,800/month net and does not pay back inside its 12-month amortization; the build alone would take 26.1 months. It would need an acceptance rate above 82% to break even.');
+      expectEq('formatted breakeven price "×0.89"', calc.formatResults(iF, rF).breakevenTokenPrice, '×0.89');
+
+      head('hourly = 0 (slope 0)');
+      const rH = calc.compute({ ...E, hourly: 0 });
+      expectEq('laborCost 0, humanMonthly 0', [rH.laborCost, rH.humanMonthly], [0, 0]);
+      expectApprox('netSavings = −6,454.33', rH.netSavings, -621 - THIRD);
+      expectEq('breakeven acceptance never (net < 0)', rH.breakevenAcceptance.kind, 'never');
+      expectEq('verdict', calc.verdict({ ...E, hourly: 0 }, rH), 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage loses $6,454/month net and does not pay back. No acceptance rate makes it pay at these inputs.');
+      const iZ = { ...E, hourly: 0, priceIn: 0, priceOut: 0, build: 0, recurring: 0 };
+      const rZ = calc.compute(iZ);
+      expectEq('slope 0 with net = 0 → always', [rZ.netSavings, rZ.breakevenAcceptance.kind], [0, 'always']);
+      expectEq('breaks even exactly', calc.verdict(iZ, rZ), 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage breaks even exactly at these inputs.');
+      const rEq = calc.compute({ ...E, reviewMin: 2, reworkMin: 2 });
+      expectEq('reviewMin == reworkMin → always', rEq.breakevenAcceptance.kind, 'always');
+      expectEq('verdict ends "stays ahead at any acceptance rate"', calc.verdict({ ...E, reviewMin: 2, reworkMin: 2 }, rEq), 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage saves $32,546/month net and pays back the build in 1.1 months. It stays ahead at any acceptance rate.');
+      expectEq('formatted "Any rate"', calc.formatResults({ ...E, reviewMin: 2, reworkMin: 2 }, rEq).breakevenAcceptance, 'Any rate');
+
+      head('reviewMin > reworkMin (ceiling)');
+      const iC = { ...E, reviewMin: 9, reworkMin: 2 };
+      const rC = calc.compute(iC);
+      expectEq('kind ceiling', rC.breakevenAcceptance.kind, 'ceiling');
+      const aCeil = ((65000 - 621 - THIRD) / 13000 - 2) / (9 - 2);
+      expectApprox('value = 35.7645…%', rC.breakevenAcceptance.value, aCeil * 100);
+      expectApprox('netSavings = −40,254.33', rC.netSavings, 65000 - 621 - 98800 - THIRD);
+      expectEq('verdict (negative, ceiling)', calc.verdict(iC, rC), 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage loses $40,254/month net and does not pay back. It only breaks even below a 36% acceptance rate, which means rework is cheaper than review in these inputs — check them.');
+      const iC2 = { ...E, reviewMin: 5, reworkMin: 2, acceptance: 20 };
+      const rC2 = calc.compute(iC2);
+      expectEq('positive ceiling kind', rC2.breakevenAcceptance.kind, 'ceiling');
+      expectApprox('positive ceiling value = 83.45…%', rC2.breakevenAcceptance.value, ((65000 - 621 - THIRD) / 13000 - 2) / (5 - 2) * 100);
+      expectEq('verdict (positive, ceiling, "an 83%")', calc.verdict(iC2, rC2), 'At 12,000 tasks/month and a 20% acceptance rate, Invoice triage saves $24,746/month net and pays back the build in 1.4 months. Above an 83% acceptance rate it stops paying for itself, which means rework is cheaper than review in these inputs — check them.');
+      expectEq('formatted ceiling', [calc.formatResults(iC, rC).breakevenAcceptance, calc.formatResults(iC, rC).breakevenAcceptanceLabel], ['36%', 'Ceiling']);
+
+      head('build = 0');
+      const rB = calc.compute({ ...E, build: 0 });
+      expectEq('payback none', rB.payback.kind, 'none');
+      expectApprox('buildMonthly 0, net = cashflow = 17,679', rB.netSavings, 17679);
+      expectEq('verdict "has no build cost to recover"', calc.verdict({ ...E, build: 0 }, rB), 'At 12,000 tasks/month and an 80% acceptance rate, Invoice triage saves $17,679/month net and has no build cost to recover. It stops paying for itself below a 61% acceptance rate.');
+      expectEq('formatted payback "No build cost"', calc.formatResults({ ...E, build: 0 }, rB).payback, 'No build cost');
+
+      head('Subnormal and extreme inputs: breakeven kinds must agree with the sign of net');
+      // reviewMin − reworkMin = 1e-310 pushes the breakeven root to +Infinity. Labour is effectively free,
+      // so the workflow stays ahead at any acceptance rate: SPEC's ceiling branch (aStar >= 1) says
+      // 'always'. A blanket "non-finite → never" contradicted the positive hero figure beside it.
+      const iSubA = { ...E, reviewMin: 1e-310, reworkMin: 0 };
+      const rSubA = calc.compute(iSubA);
+      expectApprox('reviewMin 1e-310 / reworkMin 0: netSavings = 58,545.67', rSubA.netSavings, 65000 - 621 - THIRD);
+      expectEq('reviewMin 1e-310 / reworkMin 0: breakevenAcceptance always', rSubA.breakevenAcceptance.kind, 'always');
+      expectEq('reviewMin 1e-310 / reworkMin 0: formatted "Any rate"', calc.formatResults(iSubA, rSubA).breakevenAcceptance, 'Any rate');
+      expectIncludes('reviewMin 1e-310 / reworkMin 0: verdict "stays ahead at any acceptance rate"', calc.verdict(iSubA, rSubA), 'saves $58,546/month net and pays back the build in 0.6 months. It stays ahead at any acceptance rate.');
+      // The normal-orientation twin: the root is −Infinity, and the floor branch (aStar <= 0) says 'always'.
+      const iSubB = { ...E, reviewMin: 0, reworkMin: 5e-324 };
+      const rSubB = calc.compute(iSubB);
+      check('reviewMin 0 / reworkMin 5e-324: net > 0', rSubB.netSavings > 0, show(rSubB.netSavings));
+      expectEq('reviewMin 0 / reworkMin 5e-324: breakevenAcceptance always', rSubB.breakevenAcceptance.kind, 'always');
+      // A subnormal token cost against a real margin: m = 1 + net / tokenCost overflows to Infinity.
+      // That means "price cannot matter", not "never pays" — the note must not say "Even free tokens…".
+      const iSubT = { ...E, retry: 5e-324 };
+      const rSubT = calc.compute(iSubT);
+      check('retry 5e-324: tokenCost is positive and subnormal', rSubT.tokenCost > 0 && rSubT.tokenCost < 1e-300, show(rSubT.tokenCost));
+      expectApprox('retry 5e-324: netSavings = 14,966.67 (tokens free, labour unchanged)', rSubT.netSavings, 65000 - 44200 - THIRD);
+      check('retry 5e-324: breakevenTokenPrice.kind !== "never"', rSubT.breakevenTokenPrice.kind !== 'never', show(rSubT.breakevenTokenPrice));
+      expectEq('retry 5e-324: breakevenTokenPrice "no-tokens"', rSubT.breakevenTokenPrice.kind, 'no-tokens');
+      const fSubT = calc.formatResults(iSubT, rSubT);
+      expectEq('retry 5e-324: hero figure positive, breakeven price "—"', [fSubT.netTone, fSubT.breakevenTokenPrice], ['pos', DASH]);
+      check('retry 5e-324: note does not say "Even free tokens"', !fSubT.breakevenTokenPriceNote.includes('Even free tokens'), show(fSubT.breakevenTokenPriceNote));
+      const rSubP = calc.compute({ ...E, priceIn: 1e-310, priceOut: 0 });
+      check('priceIn 1e-310 / priceOut 0: net > 0 and breakevenTokenPrice.kind !== "never"', rSubP.netSavings > 0 && rSubP.breakevenTokenPrice.kind !== 'never', show(rSubP.breakevenTokenPrice));
+      // The genuine kinds are untouched by the change.
+      expectEq('genuine never (humanMin 2) is still never', calc.compute({ ...E, humanMin: 2 }).breakevenTokenPrice.kind, 'never');
+      expectEq('genuine no-tokens (both prices 0) is still no-tokens', calc.compute({ ...E, priceIn: 0, priceOut: 0 }).breakevenTokenPrice.kind, 'no-tokens');
+      expectEq('genuine never for acceptance (hourly 5e-324, humanMin 0) is still never', (() => { const x = calc.compute({ ...E, humanMin: 0, hourly: 5e-324 }); return [x.netSavings < 0, x.breakevenAcceptance.kind]; })(), [true, 'never']);
+      // The other end of the scale: reworkMin 1e100 at 100% acceptance. No output is reworked, so net is
+      // +$32,546, but the root (1 − 1e-85) is closer to 1 than a double can represent and aStar computes
+      // as exactly 1. "Never" would contradict the hero figure; the honest answer is a floor at 100%.
+      const iBig = { ...E, acceptance: 100, reworkMin: 1e100 };
+      const rBig = calc.compute(iBig);
+      expectApprox('reworkMin 1e100 at 100%: netSavings = 32,545.67', rBig.netSavings, 65000 - 621 - 26000 - THIRD);
+      expectEq('reworkMin 1e100 at 100%: breakevenAcceptance floor at 100', [rBig.breakevenAcceptance.kind, rBig.breakevenAcceptance.value], ['floor', 100]);
+      expectEq('reworkMin 1e100 at 100%: verdict', calc.verdict(iBig, rBig), 'At 12,000 tasks/month and a 100% acceptance rate, Invoice triage saves $32,546/month net and pays back the build in 1.1 months. It stops paying for itself below a 100% acceptance rate.');
+      expectEq('reworkMin 1e100 at 99%: loses, and no acceptance rate below 100% pays → never', (() => { const x = calc.compute({ ...E, acceptance: 99, reworkMin: 1e100 }); return [x.netSavings < 0, x.breakevenAcceptance.kind]; })(), [true, 'never']);
+
+      head('Other verdict paths');
+      const iOne = { name: '', tasks: 1, inTok: 0, outTok: 0, retry: 0, priceIn: 0, priceOut: 0, acceptance: 0, reviewMin: 0, reworkMin: 0, humanMin: 0, hourly: 0, build: 0, recurring: 0, amort: 1 };
+      expectEq('all-zero single task: exact breakeven, singular "task", default name', calc.verdict(iOne), 'At 1 task/month and a 0% acceptance rate, this workflow breaks even exactly at these inputs.');
+      expectEq('blank name → "this workflow"', calc.verdict({ ...E, name: '   ' }), V.replace('Invoice triage', 'this workflow'));
+      expectEq('name used as typed', calc.verdict({ ...E, name: 'invoice TRIAGE v2' }), V.replace('Invoice triage', 'invoice TRIAGE v2'));
+      expectEq('EUR verdict uses €', calc.verdict({ ...E, currency: 'EUR' }), V.replace('$14,346', '€14,346'));
+      expectIncludes('overflow inputs: verdict says out of range', calc.verdict({ ...E, tasks: 1e308, inTok: 1e308 }), 'outside the range this model can compute');
+      expectEq('overflow inputs: payback/breakevens are never', (() => { const x = calc.compute({ ...E, tasks: 1e308, inTok: 1e308 }); return [x.payback.kind, x.breakevenAcceptance.kind, x.breakevenTokenPrice.kind]; })(), ['never', 'never', 'never']);
+
+      // ------------------------------------------------------------------ float noise at an exact breakeven
+      head('Float noise at an exact breakeven → "$0" (no sign), tone zero, "breaks even exactly"');
+      // 12,000 tasks × 5 min at $65/h is a $65,000 baseline; a $65,000 recurring cost with no tokens,
+      // no review and no build is an exact breakeven that computes to −7.3e-12 in doubles, not 0.
+      const iFz = { ...E, tasks: 12000, inTok: 0, outTok: 0, retry: 0, priceIn: 0, priceOut: 0, acceptance: 100, reviewMin: 0, reworkMin: 0, humanMin: 5, hourly: 65, build: 0, recurring: 65000, amort: 1 };
+      const rFz = calc.compute(iFz);
+      check('raw netSavings is float noise, not 0 (the case is real)', rFz.netSavings !== 0 && Math.abs(rFz.netSavings) < 1e-6, show(rFz.netSavings));
+      const fFz = calc.formatResults(iFz, rFz);
+      expectEq('netSavings "$0"', fFz.netSavings, '$0');
+      expectEq('netSavingsSigned "$0" (no sign), netTone "zero"', [fFz.netSavingsSigned, fFz.netTone], ['$0', 'zero']);
+      expectIncludes('verdict says "breaks even exactly"', fFz.verdict, 'breaks even exactly');
+      expectEq('verdict exact', calc.verdict(iFz, rFz), 'At 12,000 tasks/month and a 100% acceptance rate, Invoice triage breaks even exactly at these inputs.');
+      expectEq('sensitivity base row "$0" / "—" / zero', [fFz.sensitivity[0].net, fFz.sensitivity[0].delta, fFz.sensitivity[0].tone], ['$0', DASH, 'zero']);
+      const sumFz = calc.summaryText(iFz, rFz);
+      expectIncludes('summaryText net line "Net savings: $0"', sumFz, 'Net savings: $0');
+      check('summaryText net line carries no sign and no decimals', !sumFz.includes('Net savings: +') && !sumFz.includes('Net savings: ' + MINUS) && !sumFz.includes('Net savings: $0.'), show(sumFz));
+      const iFz2 = { ...E, tasks: 1, inTok: 0, outTok: 0, retry: 0, priceIn: 0, priceOut: 0, acceptance: 100, reviewMin: 0, reworkMin: 0, humanMin: 3, hourly: 3, build: 0, recurring: 0.15, amort: 1 };
+      const fFz2 = calc.formatResults(iFz2);
+      expectEq('positive noise (2.8e-17): "$0", no "+", tone zero', [fFz2.netSavings, fFz2.netSavingsSigned, fFz2.netTone], ['$0', '$0', 'zero']);
+      expectIncludes('positive noise verdict "breaks even exactly"', fFz2.verdict, 'breaks even exactly');
+      // reviewMin == reworkMin makes acceptance irrelevant: the "Acceptance −15 pts" delta is zero in exact
+      // arithmetic and float noise in doubles. It must print "$0", never "−$0.000" or "+$0.000".
+      const iEqRow = { ...E, tasks: 384, inTok: 1175, outTok: 220, retry: 1, priceIn: 9.07, priceOut: 26.03, acceptance: 29, reviewMin: 4, reworkMin: 4, humanMin: 7, hourly: 68, build: 4253, recurring: 427, amort: 19 };
+      const fEqRow = calc.formatResults(iEqRow);
+      expectEq('acceptance −15 delta "$0" when review == rework', fEqRow.sensitivity[3].delta, '$0');
+      expectEq('acceptance −15 row net/tone equal the base row', [fEqRow.sensitivity[3].net, fEqRow.sensitivity[3].tone], [fEqRow.sensitivity[0].net, fEqRow.sensitivity[0].tone]);
+      expectEq('fmt.money(−7.3e-12) → "$0"', calc.fmt.money(-7.275957614183426e-12, 'USD'), '$0');
+      expectEq('fmt.money(2.8e-17) → "$0"', calc.fmt.money(2.7755575615628914e-17, 'USD'), '$0');
+      expectEq('fmt.money(−0.0004) → "$0" (rounds to zero at 3 decimals, so no sign)', calc.fmt.money(-0.0004, 'USD'), '$0');
+      expectEq('fmt.money(0.0005) → "$0.001" (does not round to zero)', calc.fmt.money(0.0005, 'USD'), '$0.001');
+      expectEq('fmt.money(−0.0005) → "−$0.001"', calc.fmt.money(-0.0005, 'USD'), MINUS + '$0.001');
+      expectEq('fmt.money(−0.004, {digits: 2}) → "$0"', calc.fmt.money(-0.004, 'USD', { digits: 2 }), '$0');
+      expectEq('fmt.money(−1e-12) unsigned zero in EUR/GBP/CAD/AUD', ['EUR', 'GBP', 'CAD', 'AUD'].map((c) => calc.fmt.money(-1e-12, c)), ['€0', '£0', 'CA$0', 'A$0']);
+
+      // ------------------------------------------------------------------ formatters
+      head('fmt guards: NaN / Infinity / undefined / null / non-numbers → "—"');
+      const badValues = [['NaN', NaN], ['Infinity', Infinity], ['-Infinity', -Infinity], ['undefined', undefined], ['null', null], ['"abc"', 'abc'], ['{}', {}], ['[]', []], ['true', true]];
+      for (const [label, v] of badValues) {
+        const results = [calc.fmt.money(v, 'USD'), calc.fmt.pct(v), calc.fmt.int(v), calc.fmt.months(v), calc.fmt.mult(v), calc.fmt.tokens(v)];
+        expectEq(`fmt.* (${label}) → "—"`, results, [DASH, DASH, DASH, DASH, DASH, DASH]);
+      }
+      head('fmt examples');
+      expectEq('money ≥ 100 → 0 decimals: 1234.5 → "$1,235"', calc.fmt.money(1234.5, 'USD'), '$1,235');
+      expectEq('money < 100 → 2 decimals: 45.678 → "$45.68"', calc.fmt.money(45.678, 'USD'), '$45.68');
+      expectEq('money < 1 → 3 decimals: 0.05175 → "$0.052"', calc.fmt.money(0.05175, 'USD'), '$0.052');
+      expectEq('money 0 → "$0"', calc.fmt.money(0, 'USD'), '$0');
+      expectEq('money −0 → "$0" (no sign)', calc.fmt.money(-0, 'USD'), '$0');
+      expectEq('money negative uses U+2212: −6454.33 → "−$6,454"', calc.fmt.money(-6454.33, 'USD'), MINUS + '$6,454');
+      check('money never uses accounting parentheses', !calc.fmt.money(-12.5, 'USD').includes('('));
+      expectEq('money digits override: 120.5045 {digits:2} → "$120.50"', calc.fmt.money(120.5045, 'USD', { digits: 2 }), '$120.50');
+      expectEq('money currency symbols EUR/GBP/CAD/AUD', ['EUR', 'GBP', 'CAD', 'AUD'].map((c) => calc.fmt.money(1234, c)), ['€1,234', '£1,234', 'CA$1,234', 'A$1,234']);
+      expectEq('money unknown currency falls back to USD', calc.fmt.money(5, 'XXX'), '$5.00');
+      expectEq('money missing currency falls back to USD', calc.fmt.money(5), '$5.00');
+      expectEq('pct(80) → "80%"', calc.fmt.pct(80), '80%');
+      expectEq('pct(64.2355) → "64%"', calc.fmt.pct(64.2355), '64%');
+      expectEq('pct(64.2355, 1) → "64.2%"', calc.fmt.pct(64.2355, 1), '64.2%');
+      expectEq('pct(−3) → "−3%"', calc.fmt.pct(-3), MINUS + '3%');
+      expectEq('int(12000) → "12,000"', calc.fmt.int(12000), '12,000');
+      expectEq('int(2399.9999999) → "2,400"', calc.fmt.int(2399.9999999), '2,400');
+      expectEq('int(−2.5) → "−3"', calc.fmt.int(-2.5), MINUS + '3');
+      expectEq('months(2.2625) → "2.3 months"', calc.fmt.months(2.2625), '2.3 months');
+      expectEq('months(1) → "1.0 month"', calc.fmt.months(1), '1.0 month');
+      expectEq('months(2) → "2.0 months"', calc.fmt.months(2), '2.0 months');
+      expectEq('months(0.5) → "0.5 months"', calc.fmt.months(0.5), '0.5 months');
+      expectEq('mult(24.10091) → "×24.1"', calc.fmt.mult(24.10091), '×24.1');
+      expectEq('mult(1.15) → "×1.15"', calc.fmt.mult(1.15), '×1.15');
+      expectEq('mult(2) → "×2"', calc.fmt.mult(2), '×2');
+      expectEq('mult(0.35) → "×0.35"', calc.fmt.mult(0.35), '×0.35');
+      expectEq('tokens(82.8e6) → "82.8M"', calc.fmt.tokens(82.8e6), '82.8M');
+      expectEq('tokens(8.28e6) → "8.28M"', calc.fmt.tokens(8.28e6), '8.28M');
+      expectEq('tokens(600) → "600"', calc.fmt.tokens(600), '600');
+      expectEq('tokens(0) → "0"', calc.fmt.tokens(0), '0');
+      expectEq('tokens(1500) → "1.5K"', calc.fmt.tokens(1500), '1.5K');
+      expectEq('tokens(2.5e9) → "2.5B"', calc.fmt.tokens(2.5e9), '2.5B');
+      expectEq('tokens(1e12) → "1T"', calc.fmt.tokens(1e12), '1T');
+      expectEq('tokens(1e15) → "1,000T"', calc.fmt.tokens(1e15), '1,000T');
+      check('tokens(1e300) has no exponent notation', !/e\+/i.test(calc.fmt.tokens(1e300)) && !calc.fmt.tokens(1e300).includes('Infinity'));
+      check('int(1e300) is plain digits', /^[\d,]+$/.test(calc.fmt.int(1e300)));
+
+      // ------------------------------------------------------------------ hash state
+      head('encodeState / decodeState');
+      const h = calc.encodeState(E);
+      check('encodeState starts with "v=1&"', h.startsWith('v=1&'), h);
+      const KEYS = Object.keys(E);
+      const back = calc.decodeState('#' + h);
+      expectEq('round trip returns every key', Object.keys(back).sort(), KEYS.slice().sort());
+      check('round trip values equal EXAMPLE', KEYS.every((k) => back[k] === E[k]), show(back));
+      expectEq('round trip without "#" prefix', calc.decodeState(h), back);
+      expectEq('numbers encoded as typed', calc.encodeState({ tasks: '12000', retry: 1.15 }), 'v=1&tasks=12000&retry=1.15');
+      const odd = 'R&D triage/2 = 50% #1';
+      expectEq('name round trip with &, /, =, %, #', calc.decodeState('#' + calc.encodeState({ name: odd })).name, odd);
+      expectEq('encodeState skips undefined / null / objects', calc.encodeState({ tasks: undefined, inTok: null, outTok: { x: 1 }, retry: 2 }), 'v=1&retry=2');
+      expectEq('encodeState of nothing', calc.encodeState({}), 'v=1');
+      expectEq('encodeState of a non-object', calc.encodeState(null), 'v=1');
+      const junk = calc.decodeState('#v=1&tasks=abc&foo=bar&acceptance=&priceIn=1e3&currency=xxx&preset=nope&hourly=%20&humanMin=Infinity&build=NaN&name=ok');
+      expectEq('decode ignores junk (keeps priceIn=1000 and name only)', junk, { priceIn: 1000, name: 'ok' });
+      expectEq('decode accepts lower-case currency', calc.decodeState('currency=eur').currency, 'EUR');
+      expectEq('decode keeps valid preset', calc.decodeState('preset=mid').preset, 'mid');
+      expectEq('decode of "" / "#" / undefined / 42 → {}', [calc.decodeState(''), calc.decodeState('#'), calc.decodeState(undefined), calc.decodeState(42)], [{}, {}, {}, {}]);
+      expectEq('decode truncates a long name to 80', calc.decodeState('name=' + 'x'.repeat(200)).name.length, 80);
+      const SMILE = '\u{1F600}';   // 😀 — one code point, two UTF-16 units (a surrogate pair)
+      const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+      const decEmoji = calc.decodeState('name=' + encodeURIComponent(SMILE.repeat(100))).name;
+      expectEq('decode cuts an emoji name by code point (80 emoji, 160 units)', [Array.from(decEmoji).length, decEmoji.length], [80, 160]);
+      check('decode never leaves a lone surrogate', !LONE_SURROGATE.test(decEmoji));
+      check('decode never returns v', !('v' in calc.decodeState('#v=9&tasks=1')));
+
+      // ------------------------------------------------------------------ sanitize
+      head('sanitize');
+      const sz = calc.sanitize({ tasks: -5, acceptance: 150, amort: 0.2, retry: 'abc', name: '  x  ', currency: 'XYZ', preset: 'zzz', inTok: Infinity, hourly: null, outTok: '-0', priceIn: '12.5', priceOut: undefined });
+      expectEq('negative → 0', sz.tasks, 0);
+      expectEq('acceptance clamped to 100', sz.acceptance, 100);
+      expectEq('acceptance −3 → 0', calc.sanitize({ acceptance: -3 }).acceptance, 0);
+      expectEq('amort 0.2 → 1', sz.amort, 1);
+      expectEq('amort 2.6 → 3', calc.sanitize({ amort: 2.6 }).amort, 3);
+      expectEq('amort NaN → 1', calc.sanitize({ amort: 'x' }).amort, 1);
+      expectEq('non-numeric → 0', sz.retry, 0);
+      expectEq('Infinity → 0', sz.inTok, 0);
+      expectEq('null → 0, undefined → 0', [sz.hourly, sz.priceOut], [0, 0]);
+      check('"-0" → +0 (no negative zero)', Object.is(sz.outTok, 0));
+      expectEq('numeric string parsed', sz.priceIn, 12.5);
+      expectEq('name trimmed', sz.name, 'x');
+      expectEq('name truncated to 80', calc.sanitize({ name: 'y'.repeat(100) }).name.length, 80);
+      // 'a b'.repeat(40) is 120 chars whose 80th character is a space: the cut must be re-trimmed.
+      expectEq('sanitize idempotent with whitespace at char 80', calc.sanitize(calc.sanitize({ name: 'a b'.repeat(40) })).name, calc.sanitize({ name: 'a b'.repeat(40) }).name);
+      check('sanitized name never ends in whitespace', !calc.sanitize({ name: 'a b'.repeat(40) }).name.endsWith(' '), show(calc.sanitize({ name: 'a b'.repeat(40) }).name));
+      check('sanitized name stays within 80 after the re-trim', calc.sanitize({ name: 'a b'.repeat(40) }).name.length <= 80);
+      expectEq('verdict(raw) equals formatResults(raw).verdict for a name cut at whitespace', calc.verdict({ ...E, name: 'a b'.repeat(40) }), calc.formatResults({ ...E, name: 'a b'.repeat(40) }).verdict);
+      // Astral characters (emoji) are two UTF-16 units. A cut at 80 units splits the 40th emoji into a lone
+      // high surrogate; URLSearchParams serialises that as U+FFFD, so the hash no longer round-trips and the
+      // broken character reaches the verdict and the summary. The cut has to count code points.
+      const emojiName = 'a' + SMILE.repeat(40);   // 41 code points, 81 UTF-16 units
+      const szEmoji = calc.sanitize({ name: emojiName });
+      check('name "a" + 40 emoji: no lone surrogate after sanitize', !LONE_SURROGATE.test(szEmoji.name), show(szEmoji.name.slice(-3)));
+      expectEq('name "a" + 40 emoji: kept whole (41 code points fit in 80)', szEmoji.name, emojiName);
+      expectEq('name "a" + 40 emoji: round-trips through encodeState/decodeState', calc.decodeState('#' + calc.encodeState(szEmoji)).name, szEmoji.name);
+      check('name "a" + 40 emoji: no U+FFFD in any display string', !collectStrings(calc.formatResults({ ...E, name: emojiName })).some((s) => s.includes('�')));
+      expectIncludes('name "a" + 40 emoji: verdict carries the name intact', calc.verdict({ ...E, name: emojiName }), emojiName + ' saves $14,346/month net');
+      const szLong = calc.sanitize({ name: SMILE.repeat(100) });
+      expectEq('100 emoji: cut to 80 code points (160 units)', [Array.from(szLong.name).length, szLong.name.length], [80, 160]);
+      check('100 emoji: no lone surrogate', !LONE_SURROGATE.test(szLong.name));
+      expectEq('100 emoji: sanitize is idempotent', calc.sanitize(szLong).name, szLong.name);
+      expectEq('100 emoji: decodeState cuts to the same name', calc.decodeState('name=' + encodeURIComponent(SMILE.repeat(100))).name, szLong.name);
+      expectEq('100 emoji: round trip', calc.decodeState('#' + calc.encodeState(szLong)).name, szLong.name);
+      expectEq('name non-string → ""', calc.sanitize({ name: { a: 1 } }).name, '');
+      expectEq('bad currency → USD', sz.currency, 'USD');
+      expectEq('bad preset → custom', sz.preset, 'custom');
+      expectEq('sanitize(undefined) is a complete object', Object.keys(calc.sanitize(undefined)).sort(), KEYS.slice().sort());
+      expectEq('sanitize is idempotent on EXAMPLE', calc.sanitize(calc.sanitize(E)), calc.sanitize(E));
+      expectEq('sanitize of all-empty strings → zeros', NUMERIC_KEYS.map((k) => calc.sanitize(Object.fromEntries(NUMERIC_KEYS.map((x) => [x, ''])))[k]), NUMERIC_KEYS.map((k) => (k === 'amort' ? 1 : 0)));
+
+      // ------------------------------------------------------------------ brute-force sweep
+      head('Brute-force sweep: no "NaN", "Infinity", "undefined", "null", "[object" in any string; no "never" beside a positive net');
+      // 5e-324 (the smallest subnormal) and 1e-310 exercise the overflow paths in the breakeven ratios.
+      const VALUES = [0, 5e-324, 1e-310, 1e-9, 0.5, 1, 7, 100, 1e4, 1e9, 1e15, 1e100, 1e308];
+      let sweepCases = 0;
+      for (const key of NUMERIC_KEYS) {
+        const bad = [];
+        for (const v of VALUES) {
+          sweepCases += 1;
+          const o = offenders({ ...E, [key]: v });
+          if (o.length) bad.push(`${key}=${v}: ${o[0]}`);
+        }
+        check(`sweep ${key} across ${VALUES.length} values`, bad.length === 0, bad.slice(0, 2).join('; '));
+      }
+      const specials = {
+        'all zeros': Object.fromEntries(NUMERIC_KEYS.map((k) => [k, 0])),
+        'all 1e308': Object.fromEntries(NUMERIC_KEYS.map((k) => [k, 1e308])),
+        'all 1e-9': Object.fromEntries(NUMERIC_KEYS.map((k) => [k, 1e-9])),
+        'all 5e-324': Object.fromEntries(NUMERIC_KEYS.map((k) => [k, 5e-324])),
+        'all 1e-310': Object.fromEntries(NUMERIC_KEYS.map((k) => [k, 1e-310])),
+        'reviewMin 1e-310, reworkMin 0': { ...E, reviewMin: 1e-310, reworkMin: 0 },
+        'reviewMin 0, reworkMin 5e-324': { ...E, reviewMin: 0, reworkMin: 5e-324 },
+        'priceIn 1e-310, priceOut 0': { ...E, priceIn: 1e-310, priceOut: 0 },
+        'all empty strings': Object.fromEntries(NUMERIC_KEYS.map((k) => [k, ''])),
+        'all undefined': {},
+        'blank name': { ...E, name: '' },
+        'tasks and inTok 1e308 (overflow)': { ...E, tasks: 1e308, inTok: 1e308 },
+        'tokens only, no labour': { ...E, hourly: 0, build: 0, recurring: 0 },
+        'no tokens': { ...E, priceIn: 0, priceOut: 0 },
+        'amort 1e308': { ...E, amort: 1e308 },
+      };
+      for (const c of calc.CURRENCIES) specials[`currency ${c.code}`] = { ...E, currency: c.code };
+      for (const [label, inputs] of Object.entries(specials)) {
+        sweepCases += 1;
+        const o = offenders(inputs);
+        check(`sweep ${label}`, o.length === 0, o.slice(0, 2).join('; '));
+      }
+      let seed = 20260907;
+      const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+      const comboBad = [];
+      const COMBOS = 400;
+      for (let n = 0; n < COMBOS; n += 1) {
+        const inputs = { ...E, name: n % 7 === 0 ? '' : E.name, currency: calc.CURRENCIES[n % 5].code };
+        for (const k of NUMERIC_KEYS) inputs[k] = VALUES[Math.floor(rand() * VALUES.length)];
+        sweepCases += 1;
+        const o = offenders(inputs);
+        if (o.length) comboBad.push(`#${n} ${JSON.stringify(inputs)}: ${o[0]}`);
+      }
+      check(`sweep ${COMBOS} random combinations`, comboBad.length === 0, comboBad.slice(0, 2).join('; '));
+
+      // Random integer inputs with reviewMin == reworkMin: the "Acceptance −15 pts" row is an exact zero
+      // delta computed as float noise in every case. No display string may be a signed zero, no verdict may
+      // "save"/"lose" a zero, and that delta must be the plain unsigned zero of its currency.
+      const SIGNED_ZERO = /^[+−](\$|€|£|CA\$|A\$)0(\.0+)?$/;
+      const UNSIGNED_ZERO = /^(\$|€|£|CA\$|A\$)0$/;
+      const ri = (max) => Math.floor(rand() * (max + 1));
+      const zeroBad = [];
+      const ZERO_COMBOS = 600;
+      for (let n = 0; n < ZERO_COMBOS; n += 1) {
+        const mins = ri(20);
+        const inputs = { ...E, currency: calc.CURRENCIES[n % 5].code, tasks: ri(2000), inTok: ri(5000), outTok: ri(500), retry: 1, priceIn: ri(1000) / 100, priceOut: ri(3000) / 100, acceptance: ri(100), reviewMin: mins, reworkMin: mins, humanMin: ri(30), hourly: ri(100), build: ri(5000), recurring: ri(500), amort: 1 + ri(24) };
+        sweepCases += 1;
+        const rz = calc.compute(inputs);
+        const fz = calc.formatResults(inputs, rz);
+        const hit = collectStrings(fz).find((s) => SIGNED_ZERO.test(s));
+        if (hit) zeroBad.push(`#${n} signed zero ${show(hit)} in ${JSON.stringify(inputs)}`);
+        if (/(saves|loses) (\$|€|£|CA\$|A\$)0(\.0+)?\/month/.test(fz.verdict)) zeroBad.push(`#${n} verdict with a zero amount: ${show(fz.verdict)}`);
+        if (!UNSIGNED_ZERO.test(fz.sensitivity[3].delta)) zeroBad.push(`#${n} acceptance −15 delta ${show(fz.sensitivity[3].delta)} (want unsigned zero) in ${JSON.stringify(inputs)}`);
+      }
+      check(`sweep ${ZERO_COMBOS} random integer sets with reviewMin == reworkMin: no signed zero, no "saves/loses $0", zero delta is "$0"`, zeroBad.length === 0, zeroBad.slice(0, 2).join('; '));
+      line(`(${sweepCases} input sets swept)`, 'head');
+    } catch (err) {
+      check('no uncaught exception in the test run', false, (err && err.stack) || String(err));
+    }
+
+    // ------------------------------------------------------------------ verdict
+    const total = passCount + failCount;
+    const finalLine = failCount === 0 ? `PASS ${passCount}/${total}` : `FAIL ${failCount} of ${total}`;
+    line('', '');
+    line(finalLine, (failCount ? 'fail' : 'pass') + ' final');
+    document.title = `${finalLine} — calculator tests`;
+    console.log('TESTS: ' + finalLine);
+  </script>
+  <script>setTimeout(function(){if(!document.documentElement.dataset.calcReady){var f=document.getElementById('calc-fallback');if(f)f.hidden=false}},4000);</script>
+</body>
+</html>
