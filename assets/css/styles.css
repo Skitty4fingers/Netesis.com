@@ -756,7 +756,6 @@ p { margin: 0; }
   gap: var(--sp-3);
 }
 .card__footer:first-child { margin-top: 0; }
-.card--placeholder { border-style: dashed; box-shadow: none; background: transparent; }
 
 /* --------------------------------------------------------------------------
    11. Callouts & notice
