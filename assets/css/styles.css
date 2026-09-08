@@ -6,7 +6,7 @@
 
    Contents
      1. Tokens (brand palette: dark default, light opt-in)
-     2. Reset & base
+     2. Reset & base, ambient backdrop
      3. Typography
      4. Layout: container, section, split
      5. Skip link, header, nav, theme toggle
@@ -79,6 +79,13 @@
   --c-scroll-edge: rgba(0, 0, 0, .55);
   --glow-ambient: rgba(38, 132, 255, .15);
   --glow-intense: rgba(38, 132, 255, .40);
+  /* ambient backdrop, carried over from the Under-Construction page */
+  --bg-grid-dot: rgba(154, 160, 166, .07);
+  /* the source page uses .22; toned to .14 because this site puts small
+     accent-coloured links under the orb, and .22 pushed them to 4.28:1 */
+  --orb-core: rgba(0, 82, 204, .14);
+  --orb-mid: rgba(38, 132, 255, .06);
+  --spotlight-tint: rgba(38, 132, 255, .08);
   --shadow-1: 0 1px 2px rgba(0,0,0,.5);
   --shadow-2: 0 8px 24px -12px rgba(0,0,0,.7);
 
@@ -116,7 +123,7 @@
   --c-control-border: #7C838D;
   --c-text: #1A1A1A;            /* text-light-bg */
   --c-text-2: #454B54;
-  --c-text-3: #5D646E;
+  --c-text-3: #545A64;         /* darkened for headroom under the ambient orb */
   --c-accent: #0052CC;          /* accent-primary reads as the link colour here */
   --c-accent-hover: #003D99;
   --c-accent-fill: #0052CC;
@@ -135,6 +142,10 @@
   --c-scroll-edge: rgba(20, 22, 28, .16);
   --glow-ambient: rgba(0, 82, 204, .10);
   --glow-intense: rgba(0, 82, 204, .22);
+  --bg-grid-dot: rgba(26, 26, 26, .07);
+  --orb-core: rgba(0, 82, 204, .08);
+  --orb-mid: rgba(38, 132, 255, .06);
+  --spotlight-tint: rgba(0, 82, 204, .05);
   --shadow-1: 0 1px 2px rgba(16, 20, 28, .06), 0 1px 1px rgba(16,20,28,.04);
   --shadow-2: 0 10px 28px -14px rgba(16, 20, 28, .22);
 }
@@ -164,6 +175,52 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* --- Ambient backdrop ------------------------------------------------------
+   Ported from the Under-Construction page at netesis.com: a fine dot lattice,
+   a sapphire orb bloomed behind the masthead, and a spotlight that follows the
+   pointer. All three are fixed to the viewport, inert to input, and painted
+   below the content, which is lifted into its own stacking level. The grid and
+   orb are pseudo-elements on <html> so no page needs extra markup; the
+   spotlight is created by site.js, so it simply does not exist without JS or
+   when the visitor asks for reduced motion. */
+html::before, html::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+}
+/* dot lattice */
+html::before {
+  inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, var(--bg-grid-dot) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+/* sapphire orb behind the masthead */
+html::after {
+  top: -20%;
+  left: 50%;
+  width: min(800px, 150vw);
+  height: 500px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, var(--orb-core) 0%, var(--orb-mid) 45%, transparent 70%);
+  filter: blur(60px);
+}
+/* pointer-following spotlight (added by site.js) */
+.spotlight {
+  position: fixed;
+  top: 0; left: 0;
+  width: 600px; height: 600px;
+  margin: -300px 0 0 -300px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  background: radial-gradient(circle at center, var(--spotlight-tint) 0%, transparent 70%);
+  transition: transform .15s ease-out, opacity .25s ease;
+}
+.spotlight.is-live { opacity: 1; }
+/* content rides above the backdrop */
+.site-header, main, .site-footer { position: relative; z-index: 1; }
 
 main { flex: 1 0 auto; }
 /* target of the skip link: keep a ring so keyboard users see where focus landed,
@@ -520,42 +577,8 @@ p { margin: 0; }
   padding-block: clamp(3.5rem, 9vw, 7rem) clamp(3.5rem, 8vw, 6rem);
   overflow: hidden;
 }
-/* dot-grid on a pseudo-element so the text above it stays crisp */
-.hero::before {
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 50%;
-  /* the container column plus 48px each side, so the 24px lattice starts on the container edge */
-  width: calc(min(100% - 2 * clamp(1rem, 4vw, 2rem), var(--max-w)) + 96px);
-  transform: translateX(-50%);
-  z-index: -1;
-  pointer-events: none;
-  background-image: radial-gradient(var(--c-border) 1px, transparent 1.5px);
-  background-size: 24px 24px;
-  background-position: 12px 12px;
-  -webkit-mask-image: radial-gradient(ellipse at 30% 20%, #000 30%, transparent 75%);
-  mask-image: radial-gradient(ellipse at 30% 20%, #000 30%, transparent 75%);
-}
-/* Brand ambient: the sapphire orb that sits behind the masthead on
-   netesis.com. It is a wide, heavily blurred radial wash, kept below the
-   dot lattice and well away from the text it sits behind. */
-.hero::after {
-  content: "";
-  position: absolute;
-  top: -45%;
-  left: 50%;
-  width: min(860px, 130%);
-  height: 620px;
-  transform: translateX(-50%);
-  z-index: -2;
-  pointer-events: none;
-  background: radial-gradient(ellipse at center,
-    var(--glow-intense) 0%,
-    var(--glow-ambient) 42%,
-    transparent 70%);
-  filter: blur(58px);
-}
+/* The hero no longer paints its own texture: the ambient backdrop in
+   section 2 is fixed to the viewport and sits behind every page. */
 .hero__inner {
   display: grid;
   gap: var(--sp-10) var(--sp-8);
@@ -1464,7 +1487,9 @@ select.input {
   .wordmark__mark { filter: none; }
   /* paper has no scroll, so drop the edge hints and let tables print in full */
   .table-wrap { background-image: none; overflow-x: visible; }
-  .site-nav, .theme-toggle, .site-footer__nav, .skip-link, .hero::before, .hero::after, .cta-band { display: none; }
+  .site-nav, .theme-toggle, .site-footer__nav, .skip-link, .cta-band { display: none; }
+  /* the ambient backdrop is screen-only */
+  html::before, html::after, .spotlight { display: none; }
   .section { padding-block: 1.5rem; }
   .ledger, .card, .results, .table-wrap, .callout, .formulas, .fieldset { break-inside: avoid; }
   .js .reveal { opacity: 1; transform: none; }

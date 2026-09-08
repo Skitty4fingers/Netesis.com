@@ -140,6 +140,16 @@ Every text/background pair in both themes was checked against WCAG AA (4.5:1 bod
 
 Values duplicated outside the stylesheet, because CSS variables cannot reach them: the `<meta name="theme-color">` tag in every page head carries the canvas `#0A0C10`, and the favicon data URI hard-codes the canvas and the neon `#2684FF`. Update those if you change either.
 
+## The ambient backdrop
+
+The dot lattice, the sapphire orb and the pointer-following spotlight are carried over from the Under-Construction page, so both sites share one backdrop. All three are fixed to the viewport, inert to input, and painted below the content, which is lifted to `z-index: 1`.
+
+- **Lattice and orb** are pseudo-elements on `<html>` (section 2 of the stylesheet), so no page carries extra markup and both survive with JavaScript switched off.
+- **The spotlight** is created by `site.js`, so it does not exist at all without JavaScript. It is skipped for a visitor who has asked for reduced motion, and on devices with no fine pointer, and it moves inside a `requestAnimationFrame` so a fast pointer cannot queue up layout work.
+- Colours come from four tokens per theme: `--bg-grid-dot`, `--orb-core`, `--orb-mid`, `--spotlight-tint`. The backdrop is hidden in print.
+
+Two values were deliberately changed from the source page. The orb core is `.14` rather than `.22`: this site puts small accent-coloured links under the orb, and at `.22` a neon link fell to 4.28:1. The light theme, which the original never needed, uses its own weaker settings. The tightest pair anywhere is now a neon link over the orb core at 4.57:1.
+
 ## The logo
 
 `assets/img/netesis-logo.png` is the master lockup: the wordmark with the glowing chevron, over the `AI STRATEGY & INSIGHTS` tagline, on transparency. It is white and silver, so it is legible only on a dark ground.

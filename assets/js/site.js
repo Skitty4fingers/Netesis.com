@@ -102,4 +102,39 @@ try {
   });
 } catch (e) { /* ignore */ }
 
+/* 5. Ambient spotlight --------------------------------------------------
+   A soft sapphire pool that follows the pointer, carried over from the
+   Under-Construction page. Built here rather than in the markup so it does
+   not exist at all without JS. Skipped entirely for a visitor who asked for
+   reduced motion, and for touch-only devices where there is no pointer to
+   follow. Positioning happens in a rAF frame so a fast pointer cannot queue
+   up layout work. */
+try {
+  const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fine = window.matchMedia && window.matchMedia('(any-pointer: fine)').matches;
+  if (!still && fine) {
+    const spot = document.createElement('div');
+    spot.className = 'spotlight';
+    spot.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(spot);
+
+    let x = 0, y = 0, queued = false, live = false;
+    const paint = () => {
+      queued = false;
+      spot.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+      if (!live) { live = true; spot.classList.add('is-live'); }
+    };
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return;
+      x = e.clientX; y = e.clientY;
+      if (!queued) { queued = true; requestAnimationFrame(paint); }
+    }, { passive: true });
+
+    // Fade out when the pointer leaves the window so it never sits stranded.
+    window.addEventListener('pointerleave', () => {
+      live = false; spot.classList.remove('is-live');
+    }, { passive: true });
+  }
+} catch (e) { /* the spotlight is decoration; never let it break a page */ }
+
 try { root.dataset.siteReady = '1'; } catch (e) { /* ignore */ }
