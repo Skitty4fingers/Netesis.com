@@ -8,9 +8,12 @@ const STORAGE_KEY = 'netesis-theme';
 /* 1. Mark JS as available immediately (unlocks the .reveal styles). */
 try { root.classList.add('js'); } catch (e) { /* ignore */ }
 
-/* 2. Theme ------------------------------------------------------------- */
+/* 2. Theme -------------------------------------------------------------
+   The brand is dark-first (see the palette note at the top of styles.css),
+   so dark is the default for everyone and light is an explicit opt-in kept
+   in localStorage. The CSS mirrors this: :root is dark, and only
+   :root[data-theme="light"] repaints the tokens. */
 try {
-  const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
   const toggle = document.querySelector('[data-theme-toggle]');
 
   const stored = () => {
@@ -19,7 +22,7 @@ try {
       return t === 'light' || t === 'dark' ? t : null;
     } catch (e) { return null; }
   };
-  const current = () => stored() || (mq && mq.matches ? 'dark' : 'light');
+  const current = () => stored() || 'dark';
 
   const label = (theme) => {
     if (!toggle) return;
@@ -42,17 +45,11 @@ try {
     });
   }
 
-  // Follow the OS while the user has not chosen explicitly.
-  if (mq) {
-    const onChange = () => {
-      if (stored()) return;
-      const t = mq.matches ? 'dark' : 'light';
-      root.removeAttribute('data-theme'); // let the media query rule drive the tokens
-      label(t);
-    };
-    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onChange);
-    else if (typeof mq.addListener === 'function') mq.addListener(onChange);
-  }
+  // Keep a second tab of the site in step with this one.
+  window.addEventListener('storage', (e) => {
+    if (e.key !== STORAGE_KEY) return;
+    try { apply(current(), false); } catch (err) { /* ignore */ }
+  });
 } catch (e) { /* theme is cosmetic; never break the page */ }
 
 /* 3. Reveal on scroll ---------------------------------------------------

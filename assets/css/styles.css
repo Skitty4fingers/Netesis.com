@@ -1,10 +1,11 @@
 /* ==========================================================================
    Netesis — styles.css
-   Variant A "Ledger": editorial-technical. Ruled hairlines, right-aligned mono
-   figures, a receipt card as the hero. One stylesheet for every page.
+   Editorial-technical "ledger" layout wearing the Netesis brand: ruled
+   hairlines, right-aligned mono figures, a receipt card as the hero, on the
+   deep-slate canvas with the sapphire/neon accent. One stylesheet, every page.
 
    Contents
-     1. Tokens (light, dark ×2)
+     1. Tokens (brand palette: dark default, light opt-in)
      2. Reset & base
      3. Typography
      4. Layout: container, section, split
@@ -35,41 +36,54 @@
 /* --------------------------------------------------------------------------
    1. Tokens
    -------------------------------------------------------------------------- */
+/* Brand: netesis.com "AI Strategy & Insights".
+   Canonical palette from the Netesis brand spec (Net_Style.md):
+     canvas-main #0A0C10  canvas-surface #12161F
+     accent-primary #0052CC (Sapphire)  accent-glow #2684FF (Cyber Neon)
+     text-primary #FFFFFF  text-muted #9AA0A6 (Titanium Silver)
+     text-light-bg #1A1A1A (white-canvas / print only)
+   The brand is dark-first, so DARK is the default here and light is the
+   opt-in theme. Only tokens are redefined for light; nothing else moves. */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   /* ground */
-  --c-bg: #f8f7f4;
-  --c-surface: #ffffff;
-  --c-surface-2: #f0eee9;
-  --c-border: #d9d6ce;
-  --c-hairline: #e7e4dd;
-  --c-control-border: #8a8781; /* form-control boundary only: 3.58:1 on surface, 3.34:1 on bg (WCAG 1.4.11) */
+  --c-bg: #0A0C10;              /* canvas-main */
+  --c-surface: #12161F;         /* canvas-surface */
+  --c-surface-2: #171C27;
+  --c-border: #283040;
+  --c-hairline: #1E2430;
+  --c-control-border: #606A7A;  /* 3.31:1 on surface, 3.58:1 on canvas (WCAG 1.4.11) */
   /* ink */
-  --c-text: #17171a;
-  --c-text-2: #4a4843;
-  --c-text-3: #66635d;
-  /* accent (one saturated colour, used sparingly) */
-  --c-accent: #1f4fd6;
-  --c-accent-hover: #173fb0;
-  --c-accent-ink: #ffffff;      /* text on solid accent */
-  --c-accent-soft: #e4eafb;     /* tint backgrounds */
-  --c-accent-soft-ink: #16399e; /* text on the tint */
+  --c-text: #FFFFFF;            /* text-primary */
+  --c-text-2: #C7CDD6;
+  --c-text-3: #9AA0A6;          /* text-muted, Titanium Silver */
+  /* accent: neon carries every foreground use, sapphire is a fill only
+     (#0052CC on the canvas is 2.87:1 — never set it as text) */
+  --c-accent: #2684FF;          /* accent-glow */
+  --c-accent-hover: #6FADFF;
+  --c-accent-fill: #0052CC;     /* accent-primary: solid button/chip backgrounds */
+  --c-accent-fill-hover: #0047B2;
+  --c-accent-ink: #FFFFFF;      /* text on the sapphire fill: 6.82:1 */
+  --c-accent-soft: #101B2E;
+  --c-accent-soft-ink: #A9CBFF;
   /* money semantics */
-  --c-pos: #17703f;
-  --c-pos-soft: #e1f2e8;
-  --c-neg: #b8321a;
-  --c-neg-soft: #fbe5df;
-  --c-warn: #8a5a00;
-  --c-warn-soft: #fbefd2;
+  --c-pos: #3FD98A;
+  --c-pos-soft: #0C2A1B;
+  --c-neg: #FF8A73;
+  --c-neg-soft: #351510;
+  --c-warn: #E8B24A;
+  --c-warn-soft: #302408;
   /* misc */
-  --c-focus: #1f4fd6;
-  --c-selection: #cfdbfa;
-  --c-scroll-edge: rgba(20, 20, 25, .16); /* edge hint on a horizontally scrollable table */
-  --shadow-1: 0 1px 2px rgba(20, 20, 25, .06), 0 1px 1px rgba(20,20,25,.04);
-  --shadow-2: 0 8px 24px -12px rgba(20, 20, 25, .18);
+  --c-focus: #2684FF;
+  --c-selection: #123A6E;
+  --c-scroll-edge: rgba(0, 0, 0, .55);
+  --glow-ambient: rgba(38, 132, 255, .15);
+  --glow-intense: rgba(38, 132, 255, .40);
+  --shadow-1: 0 1px 2px rgba(0,0,0,.5);
+  --shadow-2: 0 8px 24px -12px rgba(0,0,0,.7);
 
   /* type */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --t-xs: .75rem;  --t-sm: .875rem;  --t-base: 1rem;  --t-md: 1.125rem;  --t-lg: 1.375rem;
   --t-xl: 1.75rem;  --t-2xl: clamp(2rem, 1.45rem + 2.2vw, 2.75rem);  --t-3xl: clamp(2.5rem, 1.7rem + 3.4vw, 4.25rem);
@@ -89,65 +103,40 @@
   --dur-2: 320ms;
 }
 
-/* dark: redefine ONLY tokens. Once for the OS preference (unless the user
-   forced light), once for the explicit toggle. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --c-bg: #0f0f11;
-    --c-surface: #17171a;
-    --c-surface-2: #1f1f23;
-    --c-border: #2e2e34;
-    --c-hairline: #26262b;
-    --c-control-border: #6e6d68; /* 3.45:1 on surface, 3.69:1 on bg */
-    --c-text: #ededea;
-    --c-text-2: #b6b4ae;
-    --c-text-3: #8f8d87;
-    --c-accent: #8aa8ff;
-    --c-accent-hover: #a5bbff;
-    --c-accent-ink: #0b1740;
-    --c-accent-soft: #1b2549;
-    --c-accent-soft-ink: #c5d3ff;
-    --c-pos: #56c98a;
-    --c-pos-soft: #12291c;
-    --c-neg: #ff8a73;
-    --c-neg-soft: #3a1710;
-    --c-warn: #e2b04a;
-    --c-warn-soft: #34270a;
-    --c-focus: #8aa8ff;
-    --c-selection: #2b3d7a;
-    --c-scroll-edge: rgba(0, 0, 0, .55);
-    --shadow-1: 0 1px 2px rgba(0,0,0,.5);
-    --shadow-2: 0 8px 24px -12px rgba(0,0,0,.7);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --c-bg: #0f0f11;
-  --c-surface: #17171a;
-  --c-surface-2: #1f1f23;
-  --c-border: #2e2e34;
-  --c-hairline: #26262b;
-  --c-control-border: #6e6d68; /* 3.45:1 on surface, 3.69:1 on bg */
-  --c-text: #ededea;
-  --c-text-2: #b6b4ae;
-  --c-text-3: #8f8d87;
-  --c-accent: #8aa8ff;
-  --c-accent-hover: #a5bbff;
-  --c-accent-ink: #0b1740;
-  --c-accent-soft: #1b2549;
-  --c-accent-soft-ink: #c5d3ff;
-  --c-pos: #56c98a;
-  --c-pos-soft: #12291c;
-  --c-neg: #ff8a73;
-  --c-neg-soft: #3a1710;
-  --c-warn: #e2b04a;
-  --c-warn-soft: #34270a;
-  --c-focus: #8aa8ff;
-  --c-selection: #2b3d7a;
-  --c-scroll-edge: rgba(0, 0, 0, .55);
-  --shadow-1: 0 1px 2px rgba(0,0,0,.5);
-  --shadow-2: 0 8px 24px -12px rgba(0,0,0,.7);
-  color-scheme: dark;
+/* Light theme: a cool, brand-aligned counterpart. Sapphire becomes the
+   foreground accent (6.82:1 on white) because the neon is too light to read
+   on paper-coloured ground. Body ink is the brand's own white-canvas token. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --c-bg: #F6F8FB;
+  --c-surface: #FFFFFF;
+  --c-surface-2: #EAEFF6;
+  --c-border: #D3DBE6;
+  --c-hairline: #E4EAF2;
+  --c-control-border: #7C838D;
+  --c-text: #1A1A1A;            /* text-light-bg */
+  --c-text-2: #454B54;
+  --c-text-3: #5D646E;
+  --c-accent: #0052CC;          /* accent-primary reads as the link colour here */
+  --c-accent-hover: #003D99;
+  --c-accent-fill: #0052CC;
+  --c-accent-fill-hover: #003D99;
+  --c-accent-ink: #FFFFFF;
+  --c-accent-soft: #E3ECFB;
+  --c-accent-soft-ink: #00337F;
+  --c-pos: #12703E;
+  --c-pos-soft: #E1F2E8;
+  --c-neg: #B3301A;
+  --c-neg-soft: #FBE5E0;
+  --c-warn: #7A4E00;
+  --c-warn-soft: #FBF0D4;
+  --c-focus: #0052CC;
+  --c-selection: #CFE0FB;
+  --c-scroll-edge: rgba(20, 22, 28, .16);
+  --glow-ambient: rgba(0, 82, 204, .10);
+  --glow-intense: rgba(0, 82, 204, .22);
+  --shadow-1: 0 1px 2px rgba(16, 20, 28, .06), 0 1px 1px rgba(16,20,28,.04);
+  --shadow-2: 0 10px 28px -14px rgba(16, 20, 28, .22);
 }
 
 /* --------------------------------------------------------------------------
@@ -174,7 +163,6 @@ body {
   line-height: var(--lh-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "cv11", "ss01"; /* Inter: single-storey a off, open digits */
 }
 
 main { flex: 1 0 auto; }
@@ -326,7 +314,7 @@ p { margin: 0; }
   left: -999px; top: 0;
   z-index: 100;
   padding: .6rem .9rem;
-  background: var(--c-accent);
+  background: var(--c-accent-fill);
   color: var(--c-accent-ink);
   font-size: var(--t-sm); font-weight: 500;
   text-decoration: none;
@@ -355,13 +343,24 @@ p { margin: 0; }
   gap: .6rem;
   color: var(--c-text);
   text-decoration: none;
-  font-weight: 600;
-  font-size: 1.0625rem;
-  letter-spacing: -.01em;
+  /* echoes the logo lockup: wide, uppercase, evenly tracked */
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
   line-height: 1;
 }
 .wordmark:hover { color: var(--c-text); }
-.wordmark__mark { color: var(--c-accent); flex: none; }
+/* The chevron is the brand's "terminal cursor" mark, lifted from the logo
+   lockup. It glows on the dark canvas the way the logo does; the light theme
+   gets a much quieter halo so it does not smear on a pale ground. */
+.wordmark__mark {
+  color: var(--c-accent);
+  flex: none;
+  filter: drop-shadow(0 0 5px var(--glow-intense)) drop-shadow(0 0 12px var(--glow-ambient));
+}
+:root[data-theme="light"] .wordmark__mark { filter: drop-shadow(0 0 4px var(--glow-ambient)); }
+.wordmark:hover .wordmark__mark { color: var(--c-accent-hover); }
 .wordmark--small { font-size: var(--t-base); }
 .wordmark--small .wordmark__mark { width: 18px; height: 18px; }
 
@@ -398,14 +397,12 @@ p { margin: 0; }
 }
 .theme-toggle:hover { color: var(--c-text); border-color: var(--c-border); }
 .theme-toggle[hidden] { display: none; }
+/* Dark is the default, so the button offers the sun (switch to light);
+   in the light theme it offers the moon. */
 .theme-toggle__icon { display: block; }
-.theme-toggle__icon--sun { display: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-toggle__icon--sun { display: block; }
-  :root:not([data-theme="light"]) .theme-toggle__icon--moon { display: none; }
-}
-:root[data-theme="dark"] .theme-toggle__icon--sun { display: block; }
-:root[data-theme="dark"] .theme-toggle__icon--moon { display: none; }
+.theme-toggle__icon--moon { display: none; }
+:root[data-theme="light"] .theme-toggle__icon--sun { display: none; }
+:root[data-theme="light"] .theme-toggle__icon--moon { display: block; }
 
 /* < 720: wordmark + toggle on row one, nav wraps onto row two */
 .theme-toggle { margin-left: auto; order: 2; }
@@ -472,8 +469,20 @@ p { margin: 0; }
 .btn svg { width: 16px; height: 16px; flex: none; }
 .btn:hover { color: var(--c-text); }
 
-.btn--primary { background: var(--c-accent); border-color: var(--c-accent); color: var(--c-accent-ink); }
-.btn--primary:hover { background: var(--c-accent-hover); border-color: var(--c-accent-hover); color: var(--c-accent-ink); }
+/* Filled surfaces take the sapphire, never the neon: white on #2684FF is
+   only 3.6:1, while on #0052CC it is 6.82:1. The neon returns as the glow. */
+.btn--primary {
+  background: var(--c-accent-fill);
+  border-color: var(--c-accent-fill);
+  color: var(--c-accent-ink);
+  box-shadow: 0 0 0 0 var(--glow-ambient), 0 6px 18px -10px var(--glow-intense);
+}
+.btn--primary:hover {
+  background: var(--c-accent-fill-hover);
+  border-color: var(--c-accent-fill-hover);
+  color: var(--c-accent-ink);
+  box-shadow: 0 0 0 3px var(--glow-ambient), 0 8px 22px -10px var(--glow-intense);
+}
 .btn--primary:focus-visible { outline-offset: 2px; box-shadow: 0 0 0 2px var(--c-bg); }
 
 .btn--secondary { border-color: var(--c-border); color: var(--c-text); background: transparent; }
@@ -527,6 +536,25 @@ p { margin: 0; }
   background-position: 12px 12px;
   -webkit-mask-image: radial-gradient(ellipse at 30% 20%, #000 30%, transparent 75%);
   mask-image: radial-gradient(ellipse at 30% 20%, #000 30%, transparent 75%);
+}
+/* Brand ambient: the sapphire orb that sits behind the masthead on
+   netesis.com. It is a wide, heavily blurred radial wash, kept below the
+   dot lattice and well away from the text it sits behind. */
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -45%;
+  left: 50%;
+  width: min(860px, 130%);
+  height: 620px;
+  transform: translateX(-50%);
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    var(--glow-intense) 0%,
+    var(--glow-ambient) 42%,
+    transparent 70%);
+  filter: blur(58px);
 }
 .hero__inner {
   display: grid;
@@ -1412,24 +1440,31 @@ select.input {
    26. Print
    -------------------------------------------------------------------------- */
 @media print {
-  /* one token reset instead of per-component overrides: every theme state
-     (OS dark, stored dark, stored light) prints black on white */
-  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+  /* One token reset instead of per-component overrides. The site is dark by
+     default, so paper needs every theme state forced to black on white; the
+     [data-theme] selectors are listed explicitly because they outrank a bare
+     :root and would otherwise repaint the page in colour. This is also where
+     the brand's own white-canvas ink (#1A1A1A -> #000) applies. */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
     color-scheme: light;
     --c-bg: #fff; --c-surface: #fff; --c-surface-2: #fff;
     --c-border: #888; --c-hairline: #bbb; --c-control-border: #888;
     --c-text: #000; --c-text-2: #000; --c-text-3: #333;
     --c-accent: #000; --c-accent-hover: #000; --c-accent-ink: #fff;
+    --c-accent-fill: #000; --c-accent-fill-hover: #000;
     --c-accent-soft: #fff; --c-accent-soft-ink: #000;
     --c-pos: #000; --c-neg: #000; --c-warn: #000;
     --c-pos-soft: #fff; --c-neg-soft: #fff; --c-warn-soft: #fff;
     --c-focus: #000; --c-selection: #fff;
     --c-scroll-edge: transparent;
+    --glow-ambient: transparent; --glow-intense: transparent;
     --shadow-1: none; --shadow-2: none;
   }
+  /* the logo mark is a glowing blue chevron on screen; on paper it is ink */
+  .wordmark__mark { filter: none; }
   /* paper has no scroll, so drop the edge hints and let tables print in full */
   .table-wrap { background-image: none; overflow-x: visible; }
-  .site-nav, .theme-toggle, .site-footer__nav, .skip-link, .hero::before, .cta-band { display: none; }
+  .site-nav, .theme-toggle, .site-footer__nav, .skip-link, .hero::before, .hero::after, .cta-band { display: none; }
   .section { padding-block: 1.5rem; }
   .ledger, .card, .results, .table-wrap, .callout, .formulas, .fieldset { break-inside: avoid; }
   .js .reveal { opacity: 1; transform: none; }

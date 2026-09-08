@@ -29,7 +29,7 @@ There are no includes and nothing is generated: the header and footer are repeat
 | `about.html` | Who Netesis is, how it works with clients, what it refuses to do. |
 | `contact.html` | Contact routes and the short qualifying form (a `mailto:` form until a real endpoint exists). |
 | `404.html` | Not-found page. GitHub Pages serves it for any missing path; it carries `noindex`. |
-| `assets/css/styles.css` | The only stylesheet: design tokens at the top (light palette, then two dark blocks), then every component in numbered sections. |
+| `assets/css/styles.css` | The only stylesheet: brand tokens at the top (dark default, then the light opt-in block), then every component in numbered sections. |
 | `assets/js/site.js` | Module: adds the `js` class, runs the theme toggle (preference persisted in `localStorage["netesis-theme"]`), and the reveal-on-scroll. Wrapped in try/catch so it can never break a page. |
 | `assets/js/calculator.js` | Module: the model as pure exported functions. No DOM access, no side effects; runs unchanged in Node. |
 | `assets/js/calculator-ui.js` | Module: DOM wiring for `calculator.html` – reads the form, calls `calculator.js`, writes the results panel, keeps the URL hash in sync. The only file that touches the calculator's markup. |
@@ -38,6 +38,9 @@ There are no includes and nothing is generated: the header and footer are repeat
 | `.nojekyll` | Empty. Tells Pages not to run Jekyll, so nothing gets filtered or rewritten. |
 | `robots.txt` | Allows all crawlers and points at the sitemap. |
 | `sitemap.xml` | The six indexable pages (not `404.html`, not the test page). Update `lastmod` when a page changes. |
+| `assets/img/netesis-logo.png` | The master brand lockup (1368x397, transparent). Not used by the pages; kept as the source asset and referenced by the JSON-LD. |
+| `assets/img/og-card.png` | 1200x630 social card: the lockup on the brand canvas. Referenced as `og:image` / `twitter:image` by every page. |
+| `BRAND.md` | The canonical brand palette, mirrored from the published brand spec. |
 | `README.md` | This file. |
 | `.github/workflows/pages.yml` | Deploys the repository root to GitHub Pages on every push to `main`, or by hand from the Actions tab. No build step. |
 | `.gitignore` | Keeps `FABLE-PROMPT.md` (local build notes) and OS/editor noise out of the repository. |
@@ -111,17 +114,39 @@ The presets are illustrative starting points, not any vendor's list price, and t
 
 Two things depend on the example scenario, not the presets: `EXAMPLE` in the same file carries its own `priceIn: 5, priceOut: 25` (with `preset: 'frontier'`), and the hand-checked expected values in `calculator.test.html` assert the example's results. The site copy also quotes the example's figures – $621 token cost, $14,346 net, 2.3 months payback, 64% breakeven acceptance – in the home page ledger and on the method page. Changing the frontier preset alone is safe; changing `EXAMPLE` means updating the expected values in the test page and the hand-written figures (grep the tree for `14,346`).
 
-## Changing colours and type
+## Brand, colours and type
 
-All colours, fonts, sizes, spacing and motion are custom properties at the top of `assets/css/styles.css` (section 1, Tokens). Components only ever reference tokens, so a palette change is a token change.
+The site wears the Netesis brand. `BRAND.md` mirrors the canonical palette published at `https://netesis.com/Net_Style.md`; if that file and the stylesheet ever disagree, `BRAND.md` wins.
 
-- The light palette is on `:root`. Every colour is a `--c-*` token: ground (`--c-bg`, `--c-surface`, `--c-surface-2`, `--c-border`, `--c-hairline`), ink (`--c-text`, `--c-text-2`, `--c-text-3`), the one accent (`--c-accent` and its `-hover`, `-ink`, `-soft`, `-soft-ink` companions), the money semantics (`--c-pos`, `--c-neg`, `--c-warn`, each with a `-soft` tint), plus `--c-focus` and `--c-selection`.
-- The dark palette is defined twice, immediately below, and the two blocks must stay identical: once under `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { … } }` for the operating-system preference, and once as `:root[data-theme="dark"] { … }` for the explicit toggle. Only tokens are redefined there; nothing else in the file mentions a theme.
-- Type: `--font-sans` (Inter) and `--font-mono` (JetBrains Mono) with full system fallback stacks, the `--t-*` size scale, `--lh-*` line heights. Numbers are set in the mono face via `.num`; that is the design's motif, so change the mono font with care. The Google Fonts `<link>` lives in every page's `<head>`; change it in all seven pages together with the two font tokens.
+| Token | Hex | Role |
+|---|---|---|
+| `canvas-main` | `#0A0C10` | Deep slate black, the page ground |
+| `canvas-surface` | `#12161F` | Navy charcoal: cards, panels, elevations |
+| `accent-primary` | `#0052CC` | Sapphire. Solid fills only |
+| `accent-glow` | `#2684FF` | Cyber neon. Text, links, focus, glow |
+| `text-primary` | `#FFFFFF` | Headings and body on the canvas |
+| `text-muted` | `#9AA0A6` | Titanium silver: eyebrows, help text |
+| `text-light-bg` | `#1A1A1A` | Ink for the light theme and for print |
 
-Every text/background pair in both palettes was checked against WCAG AA (4.5:1 for body text, 3:1 for large text, focus rings and meaningful borders). If you change a token, re-check contrast – a few lines of Node computing relative luminance is enough – and fix the token value, not the component that uses it. `--c-text-3` is the lightest colour allowed for body-size text.
+**The brand is dark-first, so dark is the default for every visitor.** Light is an explicit opt-in kept in `localStorage["netesis-theme"]`; the operating-system preference is deliberately not consulted, because the logo and the palette are built for the dark canvas. In CSS that means `:root` carries the dark tokens and only `:root[data-theme="light"]` repaints them — one block each, no media query. To follow the OS instead, change `current()` in `assets/js/site.js` to read `matchMedia('(prefers-color-scheme: light)')` and add a matching media block.
 
-Three values are duplicated outside the stylesheet because CSS variables cannot reach them: the two `<meta name="theme-color">` tags in every page head carry `--c-bg` for light (`#f8f7f4`) and dark (`#0f0f11`), and the favicon data URI in every page head hard-codes the light accent `#1f4fd6`. Update those if you change `--c-bg` or `--c-accent`.
+Two blues, and they are not interchangeable. White on the neon `#2684FF` is only 3.6:1, so anything with a solid accent background (the primary button, the skip link) uses `--c-accent-fill` (the sapphire, 6.82:1 with white). Everything a reader reads *as* colour — links, the focus ring, the chevron, the step numerals — uses `--c-accent` (the neon), which is 5.43:1 on the canvas. The neon returns as light rather than ink in `--glow-ambient` and `--glow-intense`, which drive the hero orb, the logo halo, and the primary button's bloom.
+
+All colours, fonts, sizes, spacing and motion are custom properties in section 1 of `assets/css/styles.css`. Components only ever reference tokens, so a palette change is a token change.
+
+- Type: `--font-sans` is Plus Jakarta Sans, the brand face; `--font-mono` is JetBrains Mono. Numbers are set in the mono face via `.num`, which is the design's motif, so change the mono font with care. The Google Fonts `<link>` is repeated in every page head; change it in all seven pages together with the token.
+
+Every text/background pair in both themes was checked against WCAG AA (4.5:1 body, 3:1 large text, focus rings and meaningful borders), measured on the rendered pages rather than on paper values. If you change a token, re-check contrast and fix the token, not the component that uses it. `--c-text-3` is the lightest colour allowed for body-size text.
+
+Values duplicated outside the stylesheet, because CSS variables cannot reach them: the `<meta name="theme-color">` tag in every page head carries the canvas `#0A0C10`, and the favicon data URI hard-codes the canvas and the neon `#2684FF`. Update those if you change either.
+
+## The logo
+
+`assets/img/netesis-logo.png` is the master lockup: the wordmark with the glowing chevron, over the `AI STRATEGY & INSIGHTS` tagline, on transparency. It is white and silver, so it is legible only on a dark ground.
+
+The site header and footer do **not** use that file. They use a compact lockup built from an inline SVG chevron plus the word Netesis as live text, because it stays crisp at 22px, recolours itself for the light theme, is selectable and readable by a screen reader, and costs no request. The chevron path and its glow live in the `.wordmark__mark` rules in section 5 of the stylesheet.
+
+`assets/img/og-card.png` is the 1200×630 social card: the master lockup composed over the brand canvas with a sapphire glow. It is referenced as `og:image` and `twitter:image` on every page, and as `logo`/`image` in the home page's `Organization` JSON-LD. Regenerate it if the logo changes.
 
 ## Deployment to GitHub Pages
 
@@ -180,12 +205,11 @@ grep -rn "TODO(content)" --include=*.html .
 
 What they are:
 
-- **Social image** – an `og:image` / `twitter:image` (1200×630 PNG) for link previews; every page head.
 - **Team bios** – names, roles, photos, LinkedIn links for the placeholder team card on `about.html`.
 - **Phone, office, social links** – the placeholder rows on `contact.html`, and `sameAs` profiles in the JSON-LD on `index.html`.
 - **Client references** – the "Looking for a reference?" callout on `about.html`; references must be supplied and approved before anything is named.
 - **Pricing decision** – whether to publish indicative ranges on `services.html`; today it says fixed prices are quoted after a scoping call, with no numbers.
-- **Form endpoint** – the contact form posts to `mailto:hello@netesis.com`; replace the `action` with a real endpoint (a Formspree/Basin URL or your own) and delete the note saying the form opens the visitor's mail client.
+- **Form endpoint** – the contact form posts to `mailto:info@netesis.com`; replace the `action` with a real endpoint (a Formspree/Basin URL or your own) and delete the note saying the form opens the visitor's mail client.
 - **Legal entity line** – registered company name and jurisdiction in the footer of every page, if required where Netesis is registered.
 
 Remove each comment as its content lands; the grep should eventually return nothing.
