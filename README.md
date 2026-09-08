@@ -171,16 +171,15 @@ To regenerate the crops after a logo change, take the master file, cut the wordm
 
 The site is committed on `main`. Once, in order:
 
-1. Create an empty repository on GitHub (no README, licence or `.gitignore` – the repository already has what it needs). Note its owner and name; they appear below as `<github-username>` and `<repo>`.
-2. Add the remote and push `main`:
+1. The remote is already set to `https://github.com/Skitty4fingers/Netesis.com.git` and `main` has been pushed. To point it somewhere else:
 
    ```sh
-   git remote add origin git@github.com:<github-username>/<repo>.git
+   git remote set-url origin https://github.com/<owner>/<repo>.git
    git push -u origin main
    ```
 
 3. In the repository on GitHub: Settings → Pages → Build and deployment → Source: **GitHub Actions**. Do not pick a starter workflow; `.github/workflows/pages.yml` is already in the repository and needs no changes.
-4. The workflow runs on every push to `main`, and can be started by hand from Actions → "Deploy to GitHub Pages" → Run workflow. If the push in step 2 landed before Pages was switched on, that first run fails at the "Configure Pages" step – re-run it. When the run is green the site is live at `https://<github-username>.github.io/<repo>/` (every link in the site is relative, so it works from that subpath as well as from the apex domain).
+4. The workflow runs on every push to `main`, and can be started by hand from Actions → "Deploy to GitHub Pages" → Run workflow. If the push landed before Pages was switched on, that first run fails at the "Configure Pages" step – re-run it. When the run is green the site is live at `https://skitty4fingers.github.io/Netesis.com/` (every link in the site is relative, so it works from that subpath as well as from the apex domain).
 5. Settings → Pages → Custom domain: enter `netesis.com` → Save. GitHub starts a DNS check, which passes once the registrar records in the next section resolve; use "Check again" after changing DNS. The `CNAME` file in the repository mirrors this setting – keep the two the same.
 6. When the DNS check has passed, tick **Enforce HTTPS**. The checkbox stays disabled until GitHub has issued the certificate, which follows the DNS check and can lag behind it; come back later if it is greyed out.
 7. Optional, recommended: verify the domain for your account or organisation (profile Settings → Pages → Add a domain, then the `TXT` record it gives you) so nobody else can claim `netesis.com` on Pages.
@@ -199,16 +198,16 @@ Add these records at the registrar that hosts the `netesis.com` zone. `@` means 
 | AAAA | `@` | `2606:50c0:8001::153` |
 | AAAA | `@` | `2606:50c0:8002::153` |
 | AAAA | `@` | `2606:50c0:8003::153` |
-| CNAME | `www` | `<github-username>.github.io` |
+| CNAME | `www` | `skitty4fingers.github.io` |
 
 - Remove any existing `A`, `ALIAS` or `ANAME` record on the apex first (registrar parking pages usually add one), and any `AAAA` that is not in the list. Never put a `CNAME` on the apex.
-- The `www` target is your GitHub user or organisation name followed by `.github.io` – not the repository name. With the apex set as the custom domain and this record in place, GitHub redirects `www.netesis.com` to `netesis.com`.
+- The `www` target is the GitHub account name followed by `.github.io` – not the repository name. With the apex set as the custom domain and this record in place, GitHub redirects `www.netesis.com` to `netesis.com`.
 - Verify from any machine with `dig`:
 
   ```sh
   dig netesis.com +noall +answer          # expect the four A records
   dig netesis.com AAAA +noall +answer     # expect the four AAAA records
-  dig www.netesis.com +noall +answer      # expect a CNAME to <github-username>.github.io
+  dig www.netesis.com +noall +answer      # expect a CNAME to skitty4fingers.github.io
   ```
 
   On Windows without `dig`, `nslookup -type=A netesis.com`, `nslookup -type=AAAA netesis.com` and `nslookup -type=CNAME www.netesis.com` show the same.
